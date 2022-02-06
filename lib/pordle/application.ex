@@ -10,6 +10,8 @@ defmodule Pordle.Application do
     children = [
       # Starts a worker by calling: Pordle.Worker.start_link(arg)
       # {Pordle.Worker, arg}
+      {Registry, name: Pordle.GameRegistry, keys: :unique},
+      Pordle.GameSupervisor
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
