@@ -17,7 +17,6 @@ defmodule Pordle.GameSupervisor do
   @doc """
   Creates a new game server with the given options. 
 
-
   ## Examples
 
       iex> GameSupervisor.start_child(opts)
