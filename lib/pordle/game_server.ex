@@ -5,17 +5,36 @@ defmodule Pordle.GameServer do
   """
   use GenServer, restart: :temporary
 
-  def start_link(opts) do
-    id = Keyword.get(opts, :id, :rand.uniform(1000))
-    GenServer.start_link(__MODULE__, opts, name: via_tuple(id))
+  alias Pordle.Game
+
+  @doc """
+  Starts a new game server for the given `game`.
+
+  ## Examples
+
+      iex> {:ok, pid} = GameServer.start_link(game)
+      {:ok, pid}
+
+  """
+  def start_link(game) do
+    GenServer.start_link(__MODULE__, game, name: via_tuple(game.name))
   end
 
   @impl true
-  def init(opts) do
-    {:ok, opts}
+  def init(game), do: {:ok, game}
+
+  @impl true
+  def handle_call({:put_player_move, word}, _from, state) do
+    case Game.put_player_move(state, word) do
+      {:error, error} ->
+        {:reply, {:error, error}, state}
+
+      new_state ->
+        {:reply, new_state, new_state}
+    end
   end
 
-  defp via_tuple(game_id) do
-    Pordle.GameRegistry.via_tuple({__MODULE__, game_id})
+  defp via_tuple(name) do
+    Pordle.GameRegistry.via_tuple({__MODULE__, name})
   end
 end

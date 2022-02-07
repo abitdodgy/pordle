@@ -4,13 +4,18 @@ defmodule Pordle.GameSupervisorTest do
   alias Pordle.{
     GameSupervisor,
     GameRegistry,
-    GameServer
+    GameServer,
+    Game
   }
 
-  test "start_child/1 starts a new game server process" do
-    assert [] = Registry.lookup(GameRegistry, "1")
+  setup do
+    {:ok, game: Game.new(name: "123")}
+  end
 
-    assert {:ok, server} = GameSupervisor.start_child([id: "1"])
-    assert [{^server, nil}] = Registry.lookup(GameRegistry, {GameServer, "1"})
+  test "start_child/1 starts a new game server process", %{game: %Game{name: name} = game} do
+    assert [] = Registry.lookup(GameRegistry, name)
+
+    assert {:ok, server} = GameSupervisor.start_child(game)
+    assert [{^server, nil}] = Registry.lookup(GameRegistry, {GameServer, name})
   end
 end
