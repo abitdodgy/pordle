@@ -34,6 +34,12 @@ defmodule Pordle.GameServer do
     end
   end
 
+  @impl true
+  def handle_call({:get_chars_used}, _from, state) do
+    result = Game.get_chars_used(state)
+    {:reply, result, state}
+  end
+
   defp via_tuple(name) do
     Pordle.GameRegistry.via_tuple({__MODULE__, name})
   end

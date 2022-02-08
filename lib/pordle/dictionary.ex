@@ -16,6 +16,7 @@ defmodule Pordle.Dictionary do
   	frost
   	slate
   	heart
+    crate
   ]
 
   def get do

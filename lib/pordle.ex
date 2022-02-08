@@ -44,4 +44,8 @@ defmodule Pordle do
         {:error, error}
     end
   end
+
+  def get_chars_used(server) do
+    GenServer.call(server, {:get_chars_used})
+  end
 end
