@@ -26,11 +26,11 @@ defmodule Pordle.GameServer do
   @impl true
   def handle_call({:put_player_move, word}, _from, state) do
     case Game.put_player_move(state, word) do
-      {:error, error} ->
-        {:reply, {:error, error}, state}
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
 
-      new_state ->
-        {:reply, new_state, new_state}
+      {:ok, new_state} ->
+        {:reply, {:ok, new_state}, new_state}
     end
   end
 
@@ -38,6 +38,28 @@ defmodule Pordle.GameServer do
   def handle_call({:get_chars_used}, _from, state) do
     result = Game.get_chars_used(state)
     {:reply, result, state}
+  end
+
+  @impl true
+  def handle_call({:get_board}, _from, state) do
+    result = Game.get_board(state)
+    {:reply, result, state}
+  end
+
+  @impl true
+  def handle_call({:get_status}, _from, state) do
+    result = Game.get_status(state)
+    {:reply, result, state}
+  end
+
+  @impl true
+  def handle_call({:get_game}, _from, state) do
+    {:reply, state, state}
+  end
+
+  @impl true
+  def handle_call({:game_over}, _from, state) do
+    {:reply, Game.over?(state), state}
   end
 
   defp via_tuple(name) do

@@ -31,12 +31,14 @@ defmodule Pordle.Game do
 
   """
   def new(opts \\ []) do
-    opts = Keyword.put(opts, :name, puid())
+    opts =
+      opts
+      |> Keyword.put(:name, puid())
+      |> Keyword.update!(:answer, &normalize_string/1)
 
     __MODULE__
     |> struct!(opts)
     |> init_board()
-    |> tap(&IO.inspect(&1))
   end
 
   @doc """
@@ -58,7 +60,7 @@ defmodule Pordle.Game do
   end
 
   @doc """
-  Returns a list of the chars used by the player.
+  Returns a list of chars used by the player.
 
   ## Examples
 
@@ -69,9 +71,31 @@ defmodule Pordle.Game do
   def get_chars_used(%Game{board: board}) do
     board
     |> List.flatten()
-    |> Enum.reject(&is_nil/1)
-    |> Enum.uniq()
+    |> Enum.reject(fn {char, _type} -> is_nil(char) end)
+    |> Enum.uniq_by(& &1)
   end
+
+  @doc """
+  Returns the status of the given `game`.
+
+  ## Examples
+
+      iex> get_status(game)
+      {:ok, :won}
+
+  """
+  def get_status(%Game{status: status}), do: {:ok, status}
+
+  @doc """
+  Returns the game board.
+
+  ## Examples
+
+      iex> get_board(game)
+      [{"a", :hit}, {"f", :nearly}, {"c", :miss}, ...]
+
+  """
+  def get_board(%Game{board: board}), do: board
 
   @doc """
   Add the player move to the given game.
@@ -79,21 +103,38 @@ defmodule Pordle.Game do
   ## Examples
 
       iex> put_player_move(game, player_guess)
-      %Game{}
+      {:ok, %Game{}}
+
+      iex> put_player_move(game, player_guess)
+      {:error, {:game_over, :won}, %Game{}}
 
   """
-  def put_player_move(%Game{status: status} = game, player_guess) do
-    cond do
-      status in [:won, :lost] ->
-        {:error, {:game_over, status}}
+  def put_player_move(game, player_guess) do
+    unless over?(game) do
+      player_guess = normalize_string(player_guess)
 
-      true ->
+      game =
         game
         |> put_board(player_guess)
         |> put_moves_made()
         |> put_status(player_guess)
+
+      {:ok, game}
+    else
+      {:error, :game_over}
     end
   end
+
+  @doc """
+  Returns whether the game is over.
+
+  ## Examples
+
+      iex> over?(game)
+      true
+
+  """
+  def over?(%Game{status: status}), do: status in [:won, :lost]
 
   defp put_board(%Game{answer: answer, moves_made: moves_made} = game, player_guess) do
     Map.update!(game, :board, fn board ->
@@ -101,33 +142,31 @@ defmodule Pordle.Game do
     end)
   end
 
-  defp put_moves_made(game) do
-    Map.update!(game, :moves_made, &(&1 + 1))
-  end
+  defp put_moves_made(game), do: Map.update!(game, :moves_made, &(&1 + 1))
 
-  defp put_status(%Game{answer: answer} = game, player_guess) do
-    Map.update!(game, :status, fn _status ->
+  defp put_status(
+         %Game{answer: answer, moves_made: moves_made, moves_allowed: moves_allowed} = game,
+         player_guess
+       ) do
+    Map.update!(game, :status, fn status ->
       cond do
         answer == player_guess ->
           :won
 
-        over?(game) ->
+        not (moves_made < moves_allowed) ->
           :lost
 
         true ->
-          :active
+          status
       end
     end)
   end
-
-  defp over?(%Game{moves_made: moves_made, moves_allowed: moves_allowed}),
-    do: not (moves_made < moves_allowed)
 
   defp init_board(%Game{moves_allowed: moves_allowed, word_size: word_size, board: []} = game) do
     size = 1..(moves_allowed * word_size)
 
     board =
-      for(_row <- size, into: [], do: nil)
+      for(_row <- size, into: [], do: {nil, :empty})
       |> Enum.chunk_every(word_size)
 
     Map.put(game, :board, board)
@@ -136,16 +175,6 @@ defmodule Pordle.Game do
   defp init_board(game), do: game
 
   defp parse_move(puzzle, answer) do
-    puzzle =
-      puzzle
-      |> String.downcase()
-      |> String.codepoints()
-
-    answer =
-      answer
-      |> String.downcase()
-      |> String.codepoints()
-
     Enum.with_index(answer, fn char, index ->
       cond do
         char == Enum.at(puzzle, index) ->
@@ -158,5 +187,12 @@ defmodule Pordle.Game do
           {char, :miss}
       end
     end)
+  end
+
+  defp normalize_string(string) do
+    string
+    |> String.downcase()
+    |> String.trim()
+    |> String.codepoints()
   end
 end
