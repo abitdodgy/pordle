@@ -1,44 +1,78 @@
 defmodule Pordle.Game do
   @moduledoc """
-  A Pordle game.
+  This module contains logic to create and interact with a Pordle game.
 
   """
   alias Pordle.Game
 
-  @enforce_keys [:name, :answer]
+  defstruct name: nil,
+            player: nil,
+            puzzle: nil,
+            puzzle_size: 5,
+            moves_allowed: 6,
+            moves_made: 0,
+            status: :active,
+            board: []
 
-  defstruct([
-    :name,
-    :player,
-    :answer,
-    word_size: 5,
-    moves_allowed: 6,
-    moves_made: 0,
-    status: :active,
-    board: []
-  ])
+  @enforce_keys [:name, :puzzle, :player]
+
+  @typedoc """
+  A Pordle game type.
+
+  """
+  @type t() :: %__MODULE__{
+          name: String.t(),
+          player: Map.t(),
+          puzzle: nonempty_charlist(),
+          puzzle_size: non_neg_integer() | 5,
+          moves_allowed: non_neg_integer() | 6,
+          moves_made: non_neg_integer() | 0,
+          status: atom() | :active | :lost | :won,
+          board: list()
+        }
 
   @doc """
   Initializes a new game struct.
 
+  Pordle automatically generates a puzzle with a default puzzle size. You can customise
+  the puzzle size using the `puzzle_size` option.
+
+  If you provide a custom puzzle, the `puzzle_size` option is ignored; its value will be derived from the given puzzle.
+
+  Configure the number of guesses a player can make with the `moves_allowed` option.
+
   ## Examples
 
       iex> Game.new()
-      %Game{name: "OpMIz...", word_size: 5}
+      %Game{name: "OpMIz...", puzzle_size: 5}
 
-      iex> Game.new(word_size: 6)
-      %Game{name: "OpMIz...", word_size: 6}
+      iex> Game.new(puzzle_size: 6)
+      %Game{name: "OpMIz...", puzzle_size: 6}
+
+  ## Options
+
+      - `puzzle_size` An `integer` size of the puzzle the game will generate. This option is ignored if a custom puzzle is provided.
+      - `puzzle` The puzzle to solve. The game automatically generates one with the default `puzzle_size`.
+      - `moves_allowed` The number of guesses the player is allowed to make before the game finishes.
 
   """
   def new(opts \\ []) do
     opts =
       opts
       |> Keyword.put(:name, puid())
-      |> Keyword.update!(:answer, &normalize_string/1)
+      |> Keyword.put_new_lazy(:puzzle, fn ->
+        default_puzzle_size = Map.get(Game.__struct__(), :puzzle_size)
+
+        opts
+        |> Keyword.get(:puzzle_size, default_puzzle_size)
+        |> Pordle.Dictionary.get()
+        |> normalize_string()
+      end)
 
     __MODULE__
     |> struct!(opts)
     |> init_board()
+    |> tap(&IO.inspect/1)
   end
 
   @doc """
@@ -136,21 +170,21 @@ defmodule Pordle.Game do
   """
   def over?(%Game{status: status}), do: status in [:won, :lost]
 
-  defp put_board(%Game{answer: answer, moves_made: moves_made} = game, player_guess) do
+  defp put_board(%Game{puzzle: puzzle, moves_made: moves_made} = game, player_guess) do
     Map.update!(game, :board, fn board ->
-      List.replace_at(board, moves_made, parse_move(answer, player_guess))
+      List.replace_at(board, moves_made, parse_move(puzzle, player_guess))
     end)
   end
 
   defp put_moves_made(game), do: Map.update!(game, :moves_made, &(&1 + 1))
 
   defp put_status(
-         %Game{answer: answer, moves_made: moves_made, moves_allowed: moves_allowed} = game,
+         %Game{puzzle: puzzle, moves_made: moves_made, moves_allowed: moves_allowed} = game,
          player_guess
        ) do
     Map.update!(game, :status, fn status ->
       cond do
-        answer == player_guess ->
+        puzzle == player_guess ->
           :won
 
         not (moves_made < moves_allowed) ->
@@ -162,12 +196,12 @@ defmodule Pordle.Game do
     end)
   end
 
-  defp init_board(%Game{moves_allowed: moves_allowed, word_size: word_size, board: []} = game) do
-    size = 1..(moves_allowed * word_size)
+  defp init_board(%Game{moves_allowed: moves_allowed, puzzle_size: puzzle_size, board: []} = game) do
+    size = 1..(moves_allowed * puzzle_size)
 
     board =
       for(_row <- size, into: [], do: {nil, :empty})
-      |> Enum.chunk_every(word_size)
+      |> Enum.chunk_every(puzzle_size)
 
     Map.put(game, :board, board)
   end

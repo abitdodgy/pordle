@@ -30,9 +30,10 @@ defmodule Pordle.CLI do
   defp parse_args(args) do
     {options, _, _} =
       OptionParser.parse(args,
-        switches: [size: :integer, player: :string, moves: :integer, answer: :string]
+        switches: [puzzle_size: :integer, player: :string, moves: :integer, puzzle: :string]
       )
 
+    IO.inspect(options)
     options
   end
 

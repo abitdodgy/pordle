@@ -1,6 +1,10 @@
 defmodule Pordle do
   @moduledoc """
-  Documentation for `Pordle`.
+  Pordle is a word game based on Wordle, a word guessing game built by
+  Josh Wardle, and was built to provide a Portuguese language version
+  of the game.
+
+  This module contains the public API for interacting with game.
 
   """
   alias Pordle.{GameSupervisor, Game, Dictionary}
@@ -8,20 +12,19 @@ defmodule Pordle do
   @doc """
   Creates a new Pordle game server with the given options.
 
+  See `Pordle.Game` for available options.
+
   ## Examples
 
       iex> {:ok, pid} = Pordle.create_game()
       {:ok, pid}
 
-      iex> {:ok, pid} = Pordle.create_game([])
+      iex> {:ok, pid} = Pordle.create_game(opts)
       {:ok, pid}
 
   """
   def create_game(opts \\ []) do
-    puzzle = Dictionary.get()
-
     opts
-    |> Keyword.put(:answer, puzzle)
     |> Game.new()
     |> GameSupervisor.start_child()
   end
@@ -46,7 +49,7 @@ defmodule Pordle do
   end
 
   @doc """
-  Returns if the game is over.
+  Returns whether the game is over for the given `server`.
 
   ## Examples
 
@@ -54,12 +57,12 @@ defmodule Pordle do
       true
 
   """
-  def game_over?(server) do
-    GenServer.call(server, {:game_over})
-  end
+  def game_over?(server), do: GenServer.call(server, {:game_over})
 
   @doc """
-  Returns the game's status.
+  Returns the game's status for the given `server`.
+
+  See `Pordle.Game` for possible values.
 
   ## Examples
 
@@ -70,7 +73,9 @@ defmodule Pordle do
   def get_status(server), do: GenServer.call(server, {:get_status})
 
   @doc """
-  Returns a list of chars used by the player during the game.
+  Returns a list of chars used by the player for the given `server`.
+
+  See `Pordle.Game` for possible values.
 
   ## Examples
 
@@ -78,22 +83,18 @@ defmodule Pordle do
       [{"a", :hit}, {"f", :nearly}, {"c", :miss}, ...]
 
   """
-  def get_chars_used(server) do
-    GenServer.call(server, {:get_chars_used})
-  end
+  def get_chars_used(server), do: GenServer.call(server, {:get_chars_used})
 
   @doc """
-  Returns the game board for the given `game`.
+  Returns the game board for the given `server`.
 
   ## Examples
 
       iex> get_board(server)
-      [[{"s", :hit}, {"h", :nearly}, {"f", :miss}, ...], ...]
+      [[{"s", :hit}, {"h", :nearly}, {"f", :miss}, ...]]
 
   """
-  def get_board(server) do
-    GenServer.call(server, {:get_board})
-  end
+  def get_board(server), do: GenServer.call(server, {:get_board})
 
   @doc """
   Returns the game struct for the given `server`.

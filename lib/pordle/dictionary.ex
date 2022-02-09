@@ -1,5 +1,5 @@
 defmodule Pordle.Dictionary do
-  @dicionary ~w[
+  @dictionary ~w[
   	steam
   	storm
   	least
@@ -17,14 +17,23 @@ defmodule Pordle.Dictionary do
   	slate
   	heart
     crate
+
+    bubble
+    breach
+    speech
+    ground
+    scream
   ]
 
-  def get do
-    Enum.random(@dicionary)
+  def get(size) do
+    @dictionary
+    |> Enum.filter(&(String.length(&1) == size))
+    |> Enum.random()
+    |> tap(&IO.inspect/1)
   end
 
   def is_entry(entry) do
-    case Enum.member?(@dicionary, entry) do
+    case Enum.member?(@dictionary, entry) do
       true ->
         {:ok, entry}
 
