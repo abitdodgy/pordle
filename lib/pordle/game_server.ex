@@ -47,8 +47,8 @@ defmodule Pordle.GameServer do
   end
 
   @impl true
-  def handle_call({:get_status}, _from, state) do
-    result = Game.get_status(state)
+  def handle_call({:get_result}, _from, state) do
+    result = Game.get_result(state)
     {:reply, result, state}
   end
 

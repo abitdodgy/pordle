@@ -60,17 +60,17 @@ defmodule Pordle do
   def game_over?(server), do: GenServer.call(server, {:game_over})
 
   @doc """
-  Returns the game's status for the given `server`.
+  Returns the game's result for the given `server`.
 
   See `Pordle.Game` for possible values.
 
   ## Examples
 
-      iex> Pordle.get_status(server)
+      iex> Pordle.get_result(server)
       :won
 
   """
-  def get_status(server), do: GenServer.call(server, {:get_status})
+  def get_result(server), do: GenServer.call(server, {:get_result})
 
   @doc """
   Returns a list of chars used by the player for the given `server`.

@@ -5,20 +5,8 @@ defmodule Pordle.Game do
   """
   alias Pordle.Game
 
-  defstruct name: nil,
-            player: nil,
-            puzzle: nil,
-            puzzle_size: 5,
-            moves_allowed: 6,
-            moves_made: 0,
-            status: :active,
-            board: []
-
-  @enforce_keys [:name, :puzzle, :player]
-
   @typedoc """
-  A Pordle game type.
-
+  A Pordle game type, e.g. `%Game{}`.
   """
   @type t() :: %__MODULE__{
           name: String.t(),
@@ -27,70 +15,60 @@ defmodule Pordle.Game do
           puzzle_size: non_neg_integer() | 5,
           moves_allowed: non_neg_integer() | 6,
           moves_made: non_neg_integer() | 0,
-          status: atom() | :active | :lost | :won,
+          result: atom() | :lost | :won,
           board: list()
         }
+
+  defstruct name: nil,
+            board: nil,
+            player: nil,
+            puzzle: nil,
+            result: nil,
+            puzzle_size: 5,
+            moves_allowed: 6,
+            moves_made: 0
 
   @doc """
   Initializes a new game struct.
 
-  Pordle automatically generates a puzzle with a default puzzle size. You can customise
-  the puzzle size using the `puzzle_size` option.
+  Unless provided, Pordle generates a puzzle with the default puzzle size. The puzzle size can be customised
+  with the `puzzle_size` option.
 
-  If you provide a custom puzzle, the `puzzle_size` option is ignored; its value will be derived from the given puzzle.
+  When a custom puzzle is provided, the `puzzle_size` option is ignored since its value will be derived
+  from the given puzzle.
 
-  Configure the number of guesses a player can make with the `moves_allowed` option.
+  The number of guesses a player can make can be configured with the `moves_allowed` option.
 
   ## Examples
 
       iex> Game.new()
-      %Game{name: "OpMIz...", puzzle_size: 5}
+      %Game{name: "OpMIz...", puzzle_size: 5, moves_allowed: 6}
 
       iex> Game.new(puzzle_size: 6)
       %Game{name: "OpMIz...", puzzle_size: 6}
 
   ## Options
 
-      - `puzzle_size` An `integer` size of the puzzle the game will generate. This option is ignored if a custom puzzle is provided.
-      - `puzzle` The puzzle to solve. The game automatically generates one with the default `puzzle_size`.
-      - `moves_allowed` The number of guesses the player is allowed to make before the game finishes.
+      - `puzzle` The puzzle to solve. If absent, the game generates a puzzle with the default `puzzle_size`.
+      - `puzzle_size` The size of the puzzle. This option is ignored if a custom puzzle is provided. Defaults to `5`.
+      - `moves_allowed` The number of guesses the player is allowed to make during the game. Defaults to `6`.
+      - `moves_made` The number of guesses the player has made. Defaults to `0`.
+      - `result` The result of the game. Can be one of `:active`, `:won`, or `:lost`. Defaults to `active`.
+      - `board` The game board. If absent, the game generates a board using the `puzzle_size` and `moves_allowed`.
+      - `player` The player.
+      - `name` Acts as a game id for the registry. If absent, one is generated automatically.
 
   """
   def new(opts \\ []) do
     opts =
       opts
-      |> Keyword.put(:name, puid())
-      |> Keyword.put_new_lazy(:puzzle, fn ->
-        default_puzzle_size = Map.get(Game.__struct__(), :puzzle_size)
-
-        opts
-        |> Keyword.get(:puzzle_size, default_puzzle_size)
-        |> Pordle.Dictionary.get()
-        |> normalize_string()
-      end)
+      |> put_name()
+      |> put_puzzle()
+      |> put_player()
 
     __MODULE__
     |> struct!(opts)
-    |> init_board()
-    |> tap(&IO.inspect/1)
-  end
-
-  @doc """
-  Generates a probably unique string with the given `size`.
-
-  ## Examples
-
-      iex> Game.puid()
-      "OpMIz26yIKK5YPN"
-
-      iex> Game.puid(6)
-      "sIK9bx"
-
-  """
-  def puid(size \\ 15) do
-    size
-    |> :crypto.strong_rand_bytes()
-    |> Base.url_encode64(padding: false)
+    |> put_board()
   end
 
   @doc """
@@ -110,15 +88,15 @@ defmodule Pordle.Game do
   end
 
   @doc """
-  Returns the status of the given `game`.
+  Returns the result of the given `game`.
 
   ## Examples
 
-      iex> get_status(game)
+      iex> get_result(game)
       {:ok, :won}
 
   """
-  def get_status(%Game{status: status}), do: {:ok, status}
+  def get_result(%Game{result: result}), do: {:ok, result}
 
   @doc """
   Returns the game board.
@@ -149,9 +127,9 @@ defmodule Pordle.Game do
 
       game =
         game
-        |> put_board(player_guess)
+        |> put_move(player_guess)
         |> put_moves_made()
-        |> put_status(player_guess)
+        |> put_result(player_guess)
 
       {:ok, game}
     else
@@ -168,9 +146,42 @@ defmodule Pordle.Game do
       true
 
   """
-  def over?(%Game{status: status}), do: status in [:won, :lost]
+  def over?(%Game{result: result, board: board}), do: not is_nil(result)
 
-  defp put_board(%Game{puzzle: puzzle, moves_made: moves_made} = game, player_guess) do
+  defp put_name(opts), do: Keyword.put_new_lazy(opts, :name, &puid/0)
+
+  defp put_puzzle(opts) do
+    Keyword.put_new_lazy(opts, :puzzle, fn ->
+      default_puzzle_size = Map.get(Game.__struct__(), :puzzle_size)
+
+      opts
+      |> Keyword.get(:puzzle_size, default_puzzle_size)
+      |> Pordle.Dictionary.get()
+      |> normalize_string()
+    end)
+  end
+
+  defp put_player(opts), do: Keyword.put_new_lazy(opts, :player, &puid/0)
+
+  defp put_board(
+         %Game{moves_allowed: moves_allowed, puzzle_size: puzzle_size, board: board} = game
+       ) do
+    cond do
+      is_nil(board) ->
+        size = 1..(moves_allowed * puzzle_size)
+
+        board =
+          for(_row <- size, into: [], do: {nil, :empty})
+          |> Enum.chunk_every(puzzle_size)
+
+        Map.put(game, :board, board)
+
+      true ->
+        game
+    end
+  end
+
+  defp put_move(%Game{puzzle: puzzle, moves_made: moves_made} = game, player_guess) do
     Map.update!(game, :board, fn board ->
       List.replace_at(board, moves_made, parse_move(puzzle, player_guess))
     end)
@@ -178,35 +189,28 @@ defmodule Pordle.Game do
 
   defp put_moves_made(game), do: Map.update!(game, :moves_made, &(&1 + 1))
 
-  defp put_status(
-         %Game{puzzle: puzzle, moves_made: moves_made, moves_allowed: moves_allowed} = game,
-         player_guess
-       ) do
-    Map.update!(game, :status, fn status ->
+  defp put_result(%Game{board: board, puzzle: puzzle} = game, player_guess) do
+    Map.update!(game, :result, fn result ->
       cond do
         puzzle == player_guess ->
           :won
 
-        not (moves_made < moves_allowed) ->
+        board_full?(board) ->
           :lost
 
         true ->
-          status
+          result
       end
     end)
   end
 
-  defp init_board(%Game{moves_allowed: moves_allowed, puzzle_size: puzzle_size, board: []} = game) do
-    size = 1..(moves_allowed * puzzle_size)
-
-    board =
-      for(_row <- size, into: [], do: {nil, :empty})
-      |> Enum.chunk_every(puzzle_size)
-
-    Map.put(game, :board, board)
+  defp board_full?(board) do
+    not (board
+         |> List.flatten()
+         |> Enum.any?(fn {char, _type} ->
+           is_nil(char)
+         end))
   end
-
-  defp init_board(game), do: game
 
   defp parse_move(puzzle, answer) do
     Enum.with_index(answer, fn char, index ->
@@ -239,5 +243,11 @@ defmodule Pordle.Game do
     |> String.downcase()
     |> String.trim()
     |> String.codepoints()
+  end
+
+  defp puid(size \\ 15) do
+    size
+    |> :crypto.strong_rand_bytes()
+    |> Base.url_encode64(padding: false)
   end
 end

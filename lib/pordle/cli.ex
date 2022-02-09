@@ -33,7 +33,6 @@ defmodule Pordle.CLI do
         switches: [puzzle_size: :integer, player: :string, moves: :integer, puzzle: :string]
       )
 
-    IO.inspect(options)
     options
   end
 
@@ -79,11 +78,14 @@ defmodule Pordle.CLI do
       end
     else
       case Pordle.get_game(server) do
-        %Pordle.Game{status: :won, moves_made: moves_made} ->
+        %Pordle.Game{result: :won, moves_made: moves_made} ->
           IO.puts("Congratulations, you won in #{moves_made} guesses!\n")
 
-        %Pordle.Game{status: :lost} ->
+        %Pordle.Game{result: :lost} ->
           IO.puts("Bad luck, you lost!\n")
+
+        _ ->
+          IO.puts("WTFFFFF")
       end
     end
   end
