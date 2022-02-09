@@ -146,7 +146,7 @@ defmodule Pordle.Game do
       true
 
   """
-  def over?(%Game{result: result, board: board}), do: not is_nil(result)
+  def over?(%Game{result: result}), do: not is_nil(result)
 
   defp put_name(opts), do: Keyword.put_new_lazy(opts, :name, &puid/0)
 
