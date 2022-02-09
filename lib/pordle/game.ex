@@ -199,7 +199,7 @@ defmodule Pordle.Game do
   end
 
   defp count_in(list, char), do: Enum.count(list, &(&1 == char))
-    
+
   defp normalize_string(string) do
     string
     |> String.downcase()
