@@ -93,10 +93,10 @@ defmodule Pordle.Game do
   ## Examples
 
       iex> get_result(game)
-      {:ok, :won}
+      :won
 
   """
-  def get_result(%Game{result: result}), do: {:ok, result}
+  def get_result(%Game{result: result}), do: result
 
   @doc """
   Returns the game board.
@@ -118,7 +118,7 @@ defmodule Pordle.Game do
       {:ok, %Game{}}
 
       iex> put_player_move(game, player_guess)
-      {:error, {:game_over, :won}, %Game{}}
+      {:error, :game_over}
 
   """
   def put_player_move(game, player_guess) do
