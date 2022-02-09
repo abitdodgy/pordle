@@ -92,16 +92,16 @@ defmodule Pordle.CLI do
 
     case type do
       :hit ->
-        IO.ANSI.green_background() <> " #{char} " <> IO.ANSI.reset()
+        IO.ANSI.green_background() <> " #{char} "
 
       :miss ->
-        IO.ANSI.color_background(2, 2, 2) <> " #{char} " <> IO.ANSI.reset()
+        IO.ANSI.color_background(2, 2, 2) <> " #{char} "
 
       :nearly ->
-        IO.ANSI.light_cyan_background() <> " #{char} " <> IO.ANSI.reset()
+        IO.ANSI.light_cyan_background() <> " #{char} "
 
       :empty ->
-        IO.ANSI.color_background(4, 4, 4) <> "   " <> IO.ANSI.reset()
-    end
+        IO.ANSI.color_background(4, 4, 4) <> "   "
+    end <> IO.ANSI.reset()
   end
 end
