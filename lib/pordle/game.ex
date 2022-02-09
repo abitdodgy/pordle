@@ -72,7 +72,7 @@ defmodule Pordle.Game do
     board
     |> List.flatten()
     |> Enum.reject(fn {char, _type} -> is_nil(char) end)
-    |> Enum.uniq_by(& &1)
+    |> Enum.uniq_by(fn {char, _type} -> char end)
   end
 
   @doc """
@@ -180,6 +180,9 @@ defmodule Pordle.Game do
         char == Enum.at(puzzle, index) ->
           {char, :hit}
 
+        char in puzzle and count_in_rest(answer, char, index) > count_in(puzzle, char) ->
+          {char, :miss}
+
         char in puzzle ->
           {char, :nearly}
 
@@ -189,6 +192,14 @@ defmodule Pordle.Game do
     end)
   end
 
+  defp count_in_rest(answer, char, index) do
+    answer
+    |> Enum.slice(index..-1)
+    |> count_in(char)
+  end
+
+  defp count_in(list, char), do: Enum.count(list, &(&1 == char))
+    
   defp normalize_string(string) do
     string
     |> String.downcase()

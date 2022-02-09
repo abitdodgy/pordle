@@ -18,7 +18,8 @@ defmodule Pordle do
 
   """
   def create_game(opts \\ []) do
-    puzzle = Dictionary.get()
+    # puzzle = Dictionary.get()
+    puzzle = "skill"
 
     opts
     |> Keyword.put(:answer, puzzle)
@@ -36,13 +37,13 @@ defmodule Pordle do
 
   """
   def put_player_move(server, word) do
-    case Dictionary.is_entry(word) do
-      {:ok, _word} ->
-        GenServer.call(server, {:put_player_move, word})
+    # case Dictionary.is_entry(word) do
+    #   {:ok, _word} ->
+    GenServer.call(server, {:put_player_move, word})
 
-      {:error, error} ->
-        {:error, error}
-    end
+    #   {:error, error} ->
+    #     {:error, error}
+    # end
   end
 
   @doc """

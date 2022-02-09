@@ -101,7 +101,7 @@ defmodule Pordle.CLI do
         IO.ANSI.light_cyan_background() <> " #{char} " <> IO.ANSI.reset()
 
       :empty ->
-        IO.ANSI.color_background(3, 3, 3) <> "   " <> IO.ANSI.reset()
+        IO.ANSI.color_background(4, 4, 4) <> "   " <> IO.ANSI.reset()
     end
   end
 end
