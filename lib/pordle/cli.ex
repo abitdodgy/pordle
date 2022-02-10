@@ -107,28 +107,38 @@ defmodule Pordle.CLI do
          moves_allowed: moves_allowed,
          result: result
        }) do
-    narrate(:game_board, moves_made: moves_made)
 
+    narrate(:game_board, moves_made: moves_made)
+    print_board(board)
+
+    keys =
+      board
+      |> List.flatten()
+      |> Enum.reject(fn {char, _type} ->
+        is_nil(char)
+      end)
+      |> Enum.uniq_by(fn {char, _type} -> char end)
+
+    if not Enum.empty?(keys) do
+      narrate(:game_keys, moves_made: moves_made)
+      print_keys(keys)
+    end
+
+    unless result, do: narrate(:moves_remaining, moves_remaining: moves_allowed - moves_made)
+  end
+
+  defp print_board(board) do
     Enum.each(board, fn row ->
       IO.write("\t")
       Enum.each(row, &draw_cell/1)
       IO.puts("\n")
-    end)
+    end)    
+  end
 
-    board
-    |> List.flatten()
-    |> Enum.reject(fn {char, _type} -> is_nil(char) end)
-    |> Enum.uniq_by(fn {char, _type} -> char end)
-    |> then(fn board ->
-      unless Enum.empty?(board) do
-        narrate(:game_keys, moves_made: moves_made)
-        IO.write("\t")
-        Enum.each(board, &draw_cell/1)
-        IO.puts("\n")
-      end
-    end)
-
-    unless result, do: narrate(:moves_remaining, moves_remaining: moves_allowed - moves_made)
+  defp print_keys(keys) do
+    IO.write("\t")
+    Enum.each(keys, &draw_cell/1)
+    IO.puts("\n")
   end
 
   defp play_move(server, guess) do
