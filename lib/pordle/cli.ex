@@ -107,7 +107,6 @@ defmodule Pordle.CLI do
          moves_allowed: moves_allowed,
          result: result
        }) do
-
     narrate(:game_board, moves_made: moves_made)
     print_board(board)
 
@@ -132,7 +131,7 @@ defmodule Pordle.CLI do
       IO.write("\t")
       Enum.each(row, &draw_cell/1)
       IO.puts("\n")
-    end)    
+    end)
   end
 
   defp print_keys(keys) do
