@@ -13,16 +13,16 @@ defmodule Pordle.CLI do
   alias Pordle.Game
 
   @narrator [
-    game_won: " 🤩 Congratulations, you won in {{moves_made}} guess(es)! 🏆\n",
-    game_lost: " 😭 Bad luck, you lost! 💩\n",
-    game_over: " 👋 Game over.\n",
-    game_keys: " 😀 Your keyboard after {{moves_made}} round(s):\n",
-    game_board: " 😀 Your board after {{moves_made}} round(s):\n",
-    moves_remaining: " 😀 You have {{moves_remaining}} guess(es) remaining.\n",
-    player_move: "\n 🤔 You guessed {{move}}.\n",
-    invalid_move: "\n 🙄 The word {{move}} is not the correct length.\n",
-    word_not_found: "\n 🤭 The word {{word}} was not found in the dictionary.\n",
-    quit: "\n 🤬 You suck!\n",
+    game_won: " 🤩 Congratulations, you won in {{moves_made}} guess(es)! 🏆",
+    game_lost: " 😭 Bad luck, you lost! 💩",
+    game_over: " 👋 Game over.",
+    game_keys: " 😀 Your keyboard after {{moves_made}} round(s):",
+    game_board: " 😀 Your board after {{moves_made}} round(s):",
+    moves_remaining: " 😀 You have {{moves_remaining}} guess(es) remaining.",
+    player_move: "\n 🤔 You guessed {{move}}.",
+    invalid_move: "\n 🙄 The word {{move}} is not the correct length.",
+    word_not_found: "\n 🤭 The word {{word}} was not found in the dictionary.",
+    quit: "\n 🤬 You suck!",
     help: ~s"""
 
       Try to guess the word before you run out of guesses.
@@ -93,7 +93,7 @@ defmodule Pordle.CLI do
   end
 
   defp narrate(line, args \\ []) do
-    line = Keyword.get(@narrator, line)
+    line = Keyword.get(@narrator, line) <> "\n"
 
     Enum.reduce(args, line, fn {key, value}, acc ->
       String.replace(acc, "{{#{key}}}", highlight(value))
