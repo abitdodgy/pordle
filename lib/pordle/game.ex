@@ -159,7 +159,7 @@ defmodule Pordle.Game do
 
   defp count_in_answer(answer, char), do: Enum.count(answer, fn {i, _type} -> i == char end)
 
-  defp count_in_puzzle(puzzle, char), do: Enum.count(puzzle, & &1 == char)
+  defp count_in_puzzle(puzzle, char), do: Enum.count(puzzle, &(&1 == char))
 
   defp to_list(string), do: String.codepoints(string)
 end

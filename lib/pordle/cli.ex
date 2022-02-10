@@ -1,5 +1,5 @@
 defmodule Pordle.CLI do
-  @moduledoc """                                             
+  @moduledoc """
 
   ██████╗  ██████╗ ██████╗ ██████╗ ██╗     ███████╗
   ██╔══██╗██╔═══██╗██╔══██╗██╔══██╗██║     ██╔════╝
@@ -13,27 +13,27 @@ defmodule Pordle.CLI do
   alias Pordle.Game
 
   @narrator [
-    game_won:         " 🤩 Congratulations, you won in {{moves_made}} guess(es)! 🏆\n",
-    game_lost:        " 😭 Bad luck, you lost! 💩\n",
-    game_over:        " 👋 Game over.\n",
-    game_keys:        " 😀 Your keyboard after {{moves_made}} round(s):\n",
-    game_board:       " 😀 Your board after {{moves_made}} round(s):\n",
-    moves_remaining:  " 😀 You have {{moves_remaining}} guess(es) remaining.\n",
-    player_move:      "\n 🤔 You guessed {{move}}.\n",
-    invalid_move:     "\n 🙄 The word {{move}} is not the correct length.\n",
-    word_not_found:   "\n 🤭 The word {{word}} was not found in the dictionary.\n",
-    quit:             "\n 🤬 You suck!\n",
-    help:             ~s"""
+    game_won: " 🤩 Congratulations, you won in {{moves_made}} guess(es)! 🏆\n",
+    game_lost: " 😭 Bad luck, you lost! 💩\n",
+    game_over: " 👋 Game over.\n",
+    game_keys: " 😀 Your keyboard after {{moves_made}} round(s):\n",
+    game_board: " 😀 Your board after {{moves_made}} round(s):\n",
+    moves_remaining: " 😀 You have {{moves_remaining}} guess(es) remaining.\n",
+    player_move: "\n 🤔 You guessed {{move}}.\n",
+    invalid_move: "\n 🙄 The word {{move}} is not the correct length.\n",
+    word_not_found: "\n 🤭 The word {{word}} was not found in the dictionary.\n",
+    quit: "\n 🤬 You suck!\n",
+    help: ~s"""
 
-                        Try to guess the word before you run out of guesses.
+      Try to guess the word before you run out of guesses.
 
-                          - #{IO.ANSI.green_background() <> " A " <> IO.ANSI.reset()} The letter A is in the word and in the right place.
+        - #{IO.ANSI.green_background() <> " A " <> IO.ANSI.reset()} The letter A is in the word and in the right place.
 
-                          - #{IO.ANSI.light_cyan_background() <> " A " <> IO.ANSI.reset()} The letter A is in the word but it's in the wrong place.
+        - #{IO.ANSI.light_cyan_background() <> " A " <> IO.ANSI.reset()} The letter A is in the word but it's in the wrong place.
 
-                          - #{IO.ANSI.color_background(2, 2, 2) <> " A " <> IO.ANSI.reset()} The letter A is not in the word.
+        - #{IO.ANSI.color_background(2, 2, 2) <> " A " <> IO.ANSI.reset()} The letter A is not in the word.
 
-                      """
+    """
   ]
 
   @doc """
@@ -58,7 +58,12 @@ defmodule Pordle.CLI do
   defp parse_args(args) do
     {options, _, _} =
       OptionParser.parse(args,
-        switches: [puzzle_size: :integer, player: :string, moves_allowed: :integer, puzzle: :string],
+        switches: [
+          puzzle_size: :integer,
+          player: :string,
+          moves_allowed: :integer,
+          puzzle: :string
+        ],
         aliases: [s: :puzzle_size, g: :moves_allowed, p: :puzzle]
       )
 
@@ -89,13 +94,19 @@ defmodule Pordle.CLI do
 
   defp narrate(line, args \\ []) do
     line = Keyword.get(@narrator, line)
+
     Enum.reduce(args, line, fn {key, value}, acc ->
       String.replace(acc, "{{#{key}}}", highlight(value))
     end)
     |> IO.puts()
   end
 
-  defp render_board(%Game{board: board, moves_made: moves_made, moves_allowed: moves_allowed, result: result}) do
+  defp render_board(%Game{
+         board: board,
+         moves_made: moves_made,
+         moves_allowed: moves_allowed,
+         result: result
+       }) do
     narrate(:game_board, moves_made: moves_made)
 
     Enum.each(board, fn row ->
@@ -159,10 +170,13 @@ defmodule Pordle.CLI do
       case type do
         :hit ->
           IO.ANSI.green_background() <> " #{char} "
+
         :miss ->
           IO.ANSI.color_background(2, 2, 2) <> " #{char} "
+
         :empty ->
           IO.ANSI.color_background(4, 4, 4) <> "\s\s\s"
+
         :nearly ->
           IO.ANSI.light_cyan_background() <> " #{char} "
       end <> IO.ANSI.reset() <> " "
