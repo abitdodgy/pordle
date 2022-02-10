@@ -48,9 +48,10 @@ defmodule Pordle.CLI do
   defp start_server(opts), do: Pordle.create_game(opts)
 
   defp render_board(%Game{board: board, moves_made: moves_made, moves_allowed: moves_allowed}) do
-    IO.puts("< 😀 > Your board after #{highlight(moves_made)} round(s):\n")
+    IO.puts(" 😀 > Your board after #{highlight(moves_made)} round(s):\n")
 
     Enum.each(board, fn row ->
+      IO.write("     > \s\s\s")
       Enum.each(row, &draw_cell/1)
       IO.puts("\n")
     end)
@@ -61,17 +62,18 @@ defmodule Pordle.CLI do
     |> Enum.uniq_by(fn {char, _type} -> char end)
     |> then(fn board ->
       unless Enum.empty?(board) do
-        IO.puts("< 😀 > Your keyboard after #{highlight(moves_made)} round(s):\n")
+        IO.puts(" 😀 > Your keyboard after #{highlight(moves_made)} round(s):\n")
+        IO.write("     > \s\s\s")
         Enum.each(board, &draw_cell/1)
         IO.puts("\n")
       end
     end)
 
-    IO.puts("< 😀 > You have #{highlight(moves_allowed - moves_made)} guess(es) remaning.\n")
+    IO.puts(" 😀 > You have #{highlight(moves_allowed - moves_made)} guess(es) remaning.\n")
   end
 
   defp receive_command(server) do
-    IO.gets("< 🧐 > Type your guess and press return: ")
+    IO.gets(" 🧐 > Type your guess and press return: ")
     |> String.trim()
     |> execute_command(server)
   end
@@ -89,7 +91,7 @@ defmodule Pordle.CLI do
   end
 
   def execute_command(guess, server) do
-    IO.puts("\n< 🤔 > You guessed #{highlight(guess)}\n")
+    IO.puts("\n 🤔 > You guessed #{highlight(guess)}.\n")
     play_move(server, guess)
   end
 
@@ -99,28 +101,28 @@ defmodule Pordle.CLI do
     |> case do
       {:ok, %Game{result: :won, moves_made: moves_made} = game} ->
         render_board(game)
-        IO.puts("< 🤩 > Congratulations, you won in #{highlight(moves_made)} guess(es)! 🏆\n")
-        IO.puts("< 😀 > Game over.\n")
+        IO.puts(" 🤩 > Congratulations, you won in #{highlight(moves_made)} guess(es)! 🏆\n")
+        IO.puts(" 👋 > Game over.\n")
 
       {:ok, %Game{result: :lost} = game} ->
         render_board(game)
-        IO.puts("< 😭 > Bad luck, you lost! 💩\n")
-        IO.puts("< 😖 > Game over.\n")
+        IO.puts(" 😭 > Bad luck, you lost! 💩\n")
+        IO.puts(" 👋 > Game over.\n")
 
       {:ok, game} ->
         render_board(game)
         receive_command(server)
 
       {:error, :invalid_move} ->
-        IO.puts("< 🙄 > The word #{highlight(guess)} is not the correct length.\n")
+        IO.puts(" 🙄 > The word #{highlight(guess)} is not the correct length.\n")
         receive_command(server)
 
       {:error, :word_not_found} ->
-        IO.puts("< 🤭 > The word #{highlight(guess)} was not found in the dictionary.\n")
+        IO.puts(" 🤭 > The word #{highlight(guess)} was not found in the dictionary.\n")
         receive_command(server)
 
       {:error, :game_over} ->
-        IO.puts("< 🤔 > Game over.\n")
+        IO.puts(" 🤔 > Game over.\n")
     end
   end
 
