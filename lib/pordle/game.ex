@@ -147,9 +147,6 @@ defmodule Pordle.Game do
         char in puzzle and count_in_answer(acc, char) < count_in_puzzle(puzzle, char) ->
           {char, :nearly}
 
-        char in puzzle ->
-          {char, :miss}
-
         true ->
           {char, :miss}
       end
