@@ -19,6 +19,10 @@ defmodule Pordle.Dictionary do
     crate
 
     bubble
+    bbblue
+    uelbbb
+    ublbbb
+    ubbbbb
     breach
     speech
     ground
@@ -29,16 +33,7 @@ defmodule Pordle.Dictionary do
     @dictionary
     |> Enum.filter(&(String.length(&1) == size))
     |> Enum.random()
-    |> tap(&IO.inspect/1)
   end
 
-  def is_entry(entry) do
-    case Enum.member?(@dictionary, entry) do
-      true ->
-        {:ok, entry}
-
-      false ->
-        {:error, :word_not_found}
-    end
-  end
+  def valid_entry?(entry), do: Enum.member?(@dictionary, entry)
 end

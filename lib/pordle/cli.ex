@@ -1,6 +1,5 @@
 defmodule Pordle.CLI do
-  @moduledoc """
-                                             
+  @moduledoc """                                             
 
   ██████╗  ██████╗ ██████╗ ██████╗ ██╗     ███████╗
   ██╔══██╗██╔═══██╗██╔══██╗██╔══██╗██║     ██╔════╝
@@ -9,9 +8,14 @@ defmodule Pordle.CLI do
   ██║     ╚██████╔╝██║  ██║██████╔╝███████╗███████╗
   ╚═╝      ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝
 
-
   Welcome to Pordle CLI. Type `:help` for help. Type `:quit` to quit. Good luck!
   """
+  alias Pordle.Game
+
+  @commands %{
+    ":quit" => "Quits the game",
+    ":help" => "Available commands"
+  }
 
   @doc """
   Entry point for the game.
@@ -20,17 +24,22 @@ defmodule Pordle.CLI do
   def main(argv) do
     IO.puts(@moduledoc)
 
-    argv
-    |> parse_args()
-    |> start_server()
+    {:ok, server} =
+      argv
+      |> parse_args()
+      |> start_server()
+
+    server
+    |> Pordle.get_game()
     |> render_board()
-    |> get_guess()
+
+    receive_command(server)
   end
 
   defp parse_args(args) do
     {options, _, _} =
       OptionParser.parse(args,
-        switches: [puzzle_size: :integer, player: :string, moves: :integer, puzzle: :string]
+        switches: [puzzle_size: :integer, player: :string, moves_allowed: :integer, puzzle: :string]
       )
 
     options
@@ -38,73 +47,102 @@ defmodule Pordle.CLI do
 
   defp start_server(opts), do: Pordle.create_game(opts)
 
-  defp render_board({:ok, server}) do
-    server
-    |> Pordle.get_board()
-    |> Enum.each(fn row ->
-      Enum.each(row, fn char -> IO.write("#{draw_cell(char)} ") end)
+  defp render_board(%Game{board: board, moves_made: moves_made, moves_allowed: moves_allowed}) do
+    IO.puts("< 😀 > Your board after #{highlight(moves_made)} round(s):\n")
+
+    Enum.each(board, fn row ->
+      Enum.each(row, &draw_cell/1)
       IO.puts("\n")
     end)
 
-    IO.write("Your keyboard: ")
+    board
+    |> List.flatten()
+    |> Enum.reject(fn {char, _type} -> is_nil(char) end)
+    |> Enum.uniq_by(fn {char, _type} -> char end)
+    |> then(fn board ->
+      unless Enum.empty?(board) do
+        IO.puts("< 😀 > Your keyboard after #{highlight(moves_made)} round(s):\n")
+        Enum.each(board, &draw_cell/1)
+        IO.puts("\n")
+      end
+    end)
 
-    server
-    |> Pordle.get_chars_used()
-    |> Enum.each(fn char -> IO.write("#{draw_cell(char)} ") end)
-
-    IO.puts("\n")
-
-    {:ok, server}
+    IO.puts("< 😀 > You have #{highlight(moves_allowed - moves_made)} guess(es) remaning.\n")
   end
 
-  def get_guess({:ok, server}) do
-    unless Pordle.game_over?(server) do
-      guess =
-        IO.gets("Type your guess and press return: ")
-        |> String.trim()
+  defp receive_command(server) do
+    IO.gets("< 🧐 > Type your guess and press return: ")
+    |> String.trim()
+    |> execute_command(server)
+  end
 
-      IO.puts("")
+  def execute_command(":quit" = cmd, _server) do
+    @commands
+    |> Map.get(cmd)
+    |> IO.puts()
+  end
 
-      server
-      |> Pordle.put_player_move(guess)
-      |> case do
-        {:ok, _board} ->
-          render_board({:ok, server}) |> get_guess()
+  def execute_command(":help" = cmd, _server) do
+    @commands
+    |> Map.get(cmd)
+    |> IO.puts()
+  end
 
-        {:error, :word_not_found} ->
-          guess = IO.ANSI.light_red() <> guess <> IO.ANSI.default_color()
-          IO.puts("The word #{guess} was not found in the dictionary.")
-          get_guess({:ok, server})
-      end
-    else
-      case Pordle.get_game(server) do
-        %Pordle.Game{result: :won, moves_made: moves_made} ->
-          IO.puts("Congratulations, you won in #{moves_made} guesses!\n")
+  def execute_command(guess, server) do
+    IO.puts("\n< 🤔 > You guessed #{highlight(guess)}\n")
+    play_move(server, guess)
+  end
 
-        %Pordle.Game{result: :lost} ->
-          IO.puts("Bad luck, you lost!\n")
+  defp play_move(server, guess) do
+    server
+    |> Pordle.put_player_move(guess)
+    |> case do
+      {:ok, %Game{result: :won, moves_made: moves_made} = game} ->
+        render_board(game)
+        IO.puts("< 🤩 > Congratulations, you won in #{highlight(moves_made)} guess(es)! 🏆\n")
+        IO.puts("< 😀 > Game over.\n")
 
-        _ ->
-          IO.puts("WTFFFFF")
-      end
+      {:ok, %Game{result: :lost} = game} ->
+        render_board(game)
+        IO.puts("< 😭 > Bad luck, you lost! 💩\n")
+        IO.puts("< 😖 > Game over.\n")
+
+      {:ok, game} ->
+        render_board(game)
+        receive_command(server)
+
+      {:error, :invalid_move} ->
+        IO.puts("< 🙄 > The word #{highlight(guess)} is not the correct length.\n")
+        receive_command(server)
+
+      {:error, :word_not_found} ->
+        IO.puts("< 🤭 > The word #{highlight(guess)} was not found in the dictionary.\n")
+        receive_command(server)
+
+      {:error, :game_over} ->
+        IO.puts("< 🤔 > Game over.\n")
     end
+  end
+
+  defp highlight(char) do
+    IO.ANSI.light_red() <> "#{char}" <> IO.ANSI.reset()
   end
 
   defp draw_cell({char, type}) do
     char = String.upcase("#{char}")
 
-    case type do
-      :hit ->
-        IO.ANSI.green_background() <> " #{char} "
+    char =
+      case type do
+        :hit ->
+          IO.ANSI.green_background() <> " #{char} "
+        :miss ->
+          IO.ANSI.color_background(2, 2, 2) <> " #{char} "
+        :empty ->
+          IO.ANSI.color_background(4, 4, 4) <> "\s\s\s"
+        :nearly ->
+          IO.ANSI.light_cyan_background() <> " #{char} "
+      end <> IO.ANSI.reset() <> " "
 
-      :miss ->
-        IO.ANSI.color_background(2, 2, 2) <> " #{char} "
-
-      :nearly ->
-        IO.ANSI.light_cyan_background() <> " #{char} "
-
-      :empty ->
-        IO.ANSI.color_background(4, 4, 4) <> "   "
-    end <> IO.ANSI.reset()
+    IO.write(char)
   end
 end

@@ -10,7 +10,7 @@ defmodule Pordle.Game do
   """
   @type t() :: %__MODULE__{
           name: String.t(),
-          player: Map.t(),
+          player: String.t(),
           puzzle: nonempty_charlist(),
           puzzle_size: non_neg_integer() | 5,
           moves_allowed: non_neg_integer() | 6,
@@ -32,7 +32,7 @@ defmodule Pordle.Game do
   Initializes a new game struct.
 
   Unless provided, Pordle generates a puzzle with the default puzzle size. The puzzle size can be customised
-  with the `puzzle_size` option.
+  with the `puzzle_size` option. A custom puzzle is not checked against the dictionary.
 
   When a custom puzzle is provided, the `puzzle_size` option is ignored since its value will be derived
   from the given puzzle.
@@ -47,23 +47,21 @@ defmodule Pordle.Game do
       iex> Game.new(puzzle_size: 6)
       %Game{name: "OpMIz...", puzzle_size: 6}
 
-  ## Options
+      iex> Game.new(puzzle: "6")
+      %Game{name: "OpMIz...", puzzle_size: 6}
+
+  ## Game Options
 
       - `puzzle` The puzzle to solve. If absent, the game generates a puzzle with the default `puzzle_size`.
       - `puzzle_size` The size of the puzzle. This option is ignored if a custom puzzle is provided. Defaults to `5`.
       - `moves_allowed` The number of guesses the player is allowed to make during the game. Defaults to `6`.
-      - `moves_made` The number of guesses the player has made. Defaults to `0`.
-      - `result` The result of the game. Can be one of `:active`, `:won`, or `:lost`. Defaults to `active`.
-      - `board` The game board. If absent, the game generates a board using the `puzzle_size` and `moves_allowed`.
-      - `player` The player.
-      - `name` Acts as a game id for the registry. If absent, one is generated automatically.
 
   """
   def new(opts \\ []) do
     opts =
       opts
       |> put_name()
-      |> put_puzzle()
+      |> put_puzzle_and_size()
       |> put_player()
 
     __MODULE__
@@ -72,45 +70,7 @@ defmodule Pordle.Game do
   end
 
   @doc """
-  Returns a list of chars used by the player.
-
-  ## Examples
-
-      iex> get_chars_used(game)
-      [{"a", :hit}, {"s", :nearly}, ...]
-
-  """
-  def get_chars_used(%Game{board: board}) do
-    board
-    |> List.flatten()
-    |> Enum.reject(fn {char, _type} -> is_nil(char) end)
-    |> Enum.uniq_by(fn {char, _type} -> char end)
-  end
-
-  @doc """
-  Returns the result of the given `game`.
-
-  ## Examples
-
-      iex> get_result(game)
-      :won
-
-  """
-  def get_result(%Game{result: result}), do: result
-
-  @doc """
-  Returns the game board.
-
-  ## Examples
-
-      iex> get_board(game)
-      [{"a", :hit}, {"f", :nearly}, {"c", :miss}, ...]
-
-  """
-  def get_board(%Game{board: board}), do: board
-
-  @doc """
-  Add the player move to the given game.
+  Validates and adds the player move to the given game.
 
   ## Examples
 
@@ -118,22 +78,36 @@ defmodule Pordle.Game do
       {:ok, %Game{}}
 
       iex> put_player_move(game, player_guess)
+      {:error, :invalid_move}
+
+      iex> put_player_move(game, player_guess)
+      {:error, :word_not_found}
+
+      iex> put_player_move(game, player_guess)
       {:error, :game_over}
 
   """
   def put_player_move(game, player_guess) do
-    unless over?(game) do
-      player_guess = normalize_string(player_guess)
+    cond do
+      over?(game) ->
+        {:error, :game_over}
 
-      game =
-        game
-        |> put_move(player_guess)
-        |> put_moves_made()
-        |> put_result(player_guess)
+      not valid_move?(game, player_guess) ->
+        {:error, :invalid_move}
 
-      {:ok, game}
-    else
-      {:error, :game_over}
+      not valid_word?(player_guess) ->
+        {:error, :word_not_found}
+
+      true ->
+        player_guess = normalize_string(player_guess)
+
+        game =
+          game
+          |> put_move(player_guess)
+          |> put_moves_made()
+          |> put_result(player_guess)
+        
+        {:ok, game}
     end
   end
 
@@ -148,17 +122,37 @@ defmodule Pordle.Game do
   """
   def over?(%Game{result: result}), do: not is_nil(result)
 
+  defp valid_move?(%Game{puzzle: puzzle}, player_guess) do
+    length(puzzle) == String.length(player_guess)
+  end
+
+  defp valid_word?(player_guess) do
+    player_guess
+    |> String.downcase()
+    |> String.trim()
+    |> Pordle.Dictionary.valid_entry?()
+  end
+
   defp put_name(opts), do: Keyword.put_new_lazy(opts, :name, &puid/0)
 
-  defp put_puzzle(opts) do
-    Keyword.put_new_lazy(opts, :puzzle, fn ->
-      default_puzzle_size = Map.get(Game.__struct__(), :puzzle_size)
+  defp put_puzzle_and_size(opts) do
+    puzzle =
+      case Keyword.get(opts, :puzzle) do
+        nil ->
+          opts
+          |> Keyword.get_lazy(:puzzle_size, fn ->
+            Map.get(Game.__struct__(), :puzzle_size)
+          end)
+          |> Pordle.Dictionary.get()
+          |> normalize_string()
 
-      opts
-      |> Keyword.get(:puzzle_size, default_puzzle_size)
-      |> Pordle.Dictionary.get()
-      |> normalize_string()
-    end)
+        puzzle ->
+          normalize_string(puzzle)
+      end
+
+    opts
+    |> Keyword.put(:puzzle, puzzle)
+    |> Keyword.put(:puzzle_size, length(puzzle))
   end
 
   defp put_player(opts), do: Keyword.put_new_lazy(opts, :player, &puid/0)
