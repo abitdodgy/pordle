@@ -19,10 +19,13 @@ defmodule Pordle.CLI do
     game_keys: " 😀 Your keyboard after {{moves_made}} round(s):\n",
     game_board: " 😀 Your board after {{moves_made}} round(s):\n",
     moves_remaining: " 😀 You have {{moves_remaining}} guess(es) remaining.\n",
-    player_move: "\n 🤔 You guessed {{move}}.\n",
+    player_move: ~s"""
+
+     🤔 You guessed {{move}}.
+    """,
     invalid_move: "\n 🙄 The word {{move}} is not the correct length.\n",
     word_not_found: "\n 🤭 The word {{word}} was not found in the dictionary.\n",
-    quit: "\n 🤬 You suck!\n",
+    quit: " 🤬 You suck!\n",
     help: ~s"""
 
       Try to guess the word before you run out of guesses.
@@ -136,10 +139,12 @@ defmodule Pordle.CLI do
     |> Pordle.put_player_move(guess)
     |> case do
       {:ok, %Game{result: :won, moves_made: moves_made} = game} ->
+        narrate(:player_move, move: guess)
         render_board(game)
         narrate(:game_won, moves_made: moves_made)
 
       {:ok, %Game{result: :lost} = game} ->
+        narrate(:player_move, move: guess)
         render_board(game)
         narrate(:game_lost)
 
