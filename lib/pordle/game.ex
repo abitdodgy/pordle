@@ -1,6 +1,6 @@
 defmodule Pordle.Game do
   @moduledoc """
-  This module contains game logic and state.
+  This module holds game state and contains logic to manipulate it.
 
   """
   alias Pordle.Game
