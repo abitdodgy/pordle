@@ -8,6 +8,27 @@ defmodule Pordle.CLI.Narrator do
   @highlight_color Application.fetch_env!(:pordle, :colors)[:highlight]
 
   @lines [
+    game_start: ~s"""
+
+      ██████╗  ██████╗ ██████╗ ██████╗ ██╗     ███████╗
+      ██╔══██╗██╔═══██╗██╔══██╗██╔══██╗██║     ██╔════╝
+      ██████╔╝██║   ██║██████╔╝██║  ██║██║     █████╗  
+      ██╔═══╝ ██║   ██║██╔══██╗██║  ██║██║     ██╔══╝  
+      ██║     ╚██████╔╝██║  ██║██████╔╝███████╗███████╗
+      ╚═╝      ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝
+
+      Welcome to Pordle CLI. Type `:help` for help. Type `:quit` to quit. Good luck!
+    """,
+    help: ~s"""
+
+    😀 Try to guess the word before you run out of guesses.
+
+        - #{CLI.cell("A", :hit)} The letter A is in the word and in the right place.
+        - #{CLI.cell("A", :nearly)} The letter A is in the word but it's in the wrong place.
+        - #{CLI.cell("A", :miss)} The letter A is not in the word.
+
+      Type `:quit` to quit the game.
+    """,
     game_won: "🤩 Congratulations, you won in {{moves_made}} guess(es)! 🏆",
     game_lost: "😭 Bad luck, you lost! 💩",
     game_over: "👋 Game over.",
@@ -19,27 +40,6 @@ defmodule Pordle.CLI.Narrator do
     invalid_move: "\n🙄 The word {{move}} is not the correct length.",
     word_not_found: "\n🤭 The word {{word}} was not found in the dictionary.",
     quit: "\n🤬 You suck!",
-    help: ~s"""
-
-    😀 Try to guess the word before you run out of guesses.
-
-        - #{CLI.cell("A", :hit)} The letter A is in the word and in the right place.
-        - #{CLI.cell("A", :nearly)} The letter A is in the word but it's in the wrong place.
-        - #{CLI.cell("A", :miss)} The letter A is not in the word.
-
-      Type `:quit` to quit the game.
-    """,
-    game_start: ~s"""
-
-      ██████╗  ██████╗ ██████╗ ██████╗ ██╗     ███████╗
-      ██╔══██╗██╔═══██╗██╔══██╗██╔══██╗██║     ██╔════╝
-      ██████╔╝██║   ██║██████╔╝██║  ██║██║     █████╗  
-      ██╔═══╝ ██║   ██║██╔══██╗██║  ██║██║     ██╔══╝  
-      ██║     ╚██████╔╝██║  ██║██████╔╝███████╗███████╗
-      ╚═╝      ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝
-
-      Welcome to Pordle CLI. Type `:help` for help. Type `:quit` to quit. Good luck!
-    """
   ]
 
   @doc """
