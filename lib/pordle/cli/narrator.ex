@@ -5,6 +5,8 @@ defmodule Pordle.CLI.Narrator do
   """
   alias Pordle.CLI
 
+  @highlight_color Application.fetch_env!(:pordle, :colors)[:highlight]
+
   @lines [
     game_won: "🤩 Congratulations, you won in {{moves_made}} guess(es)! 🏆",
     game_lost: "😭 Bad luck, you lost! 💩",
@@ -59,5 +61,5 @@ defmodule Pordle.CLI.Narrator do
   """
   def get_line(line), do: @lines[line]
 
-  defp highlight(char), do: IO.ANSI.light_red() <> "#{char}" <> IO.ANSI.reset()
+  defp highlight(char), do: @highlight_color <> "#{char}" <> IO.ANSI.reset()
 end

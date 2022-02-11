@@ -5,13 +5,7 @@ defmodule Pordle.CLI do
   """
   alias Pordle.{GameServer, Game, CLI.Narrator}
 
-  @colors [
-    hit: IO.ANSI.green_background(),
-    miss: IO.ANSI.color_background(2, 2, 2),
-    nearly: IO.ANSI.light_cyan_background(),
-    empty: IO.ANSI.color_background(4, 4, 4),
-    highlight: IO.ANSI.light_red()
-  ]
+  @cell_colors Application.fetch_env!(:pordle, :colors)
 
   @doc """
   Entry point for the game.
@@ -141,5 +135,5 @@ defmodule Pordle.CLI do
     |> IO.write()
   end
 
-  def cell(char, state), do: @colors[state] <> " #{char} " <> IO.ANSI.reset() <> "\s"
+  def cell(char, state), do: @cell_colors[state] <> " #{char} " <> IO.ANSI.reset() <> "\s"
 end
