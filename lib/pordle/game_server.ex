@@ -108,7 +108,7 @@ defmodule Pordle.GameServer do
 
   @impl true
   def handle_call(:get_state, _from, state) do
-    {:reply, state, state}
+    {:reply, {:ok, state}, state}
   end
 
   defp sanitize(string) do
