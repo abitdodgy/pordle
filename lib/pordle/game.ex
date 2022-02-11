@@ -15,7 +15,8 @@ defmodule Pordle.Game do
           moves_allowed: non_neg_integer() | 6,
           moves_made: non_neg_integer() | 0,
           result: atom() | :lost | :won,
-          board: list()
+          board: list(),
+          keys: list()
         }
 
   defstruct name: nil,
@@ -24,7 +25,8 @@ defmodule Pordle.Game do
             result: nil,
             puzzle_size: 5,
             moves_allowed: 6,
-            moves_made: 0
+            moves_made: 0,
+            keys: []
 
   @doc """
   Returns a new game struct with the given values. Generates a `board` if one isn't passed in.
@@ -57,6 +59,7 @@ defmodule Pordle.Game do
           game
           |> put_move(move)
           |> put_result(move)
+          |> put_keys()
 
         {:ok, game}
 
@@ -124,6 +127,16 @@ defmodule Pordle.Game do
           result
       end
     end)
+  end
+
+  defp put_keys(%Game{board: board} = game) do
+    keys =
+      board
+      |> List.flatten()
+      |> Enum.reject(fn {char, _type} -> is_nil(char) end)
+      |> Enum.uniq_by(fn {char, _type} -> char end)
+
+    Map.put(game, :keys, keys)
   end
 
   defp board_full?(board) do

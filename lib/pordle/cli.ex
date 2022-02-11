@@ -105,18 +105,11 @@ defmodule Pordle.CLI do
          board: board,
          moves_made: moves_made,
          moves_allowed: moves_allowed,
+         keys: keys,
          result: result
        }) do
     narrate(:game_board, moves_made: moves_made)
     print_board(board)
-
-    keys =
-      board
-      |> List.flatten()
-      |> Enum.reject(fn {char, _type} ->
-        is_nil(char)
-      end)
-      |> Enum.uniq_by(fn {char, _type} -> char end)
 
     if not Enum.empty?(keys) do
       narrate(:game_keys, moves_made: moves_made)

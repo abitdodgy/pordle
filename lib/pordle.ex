@@ -28,9 +28,9 @@ defmodule Pordle do
 
   ## Options
 
-      - `puzzle` The puzzle to solve. If absent, the game generates a puzzle with the default `puzzle_size`.
-      - `puzzle_size` The length of the puzzle. This option is ignored if a custom puzzle is provided. Defaults to `5`.
-      - `moves_allowed` The maximum number of guesses the player can make before the game finishes. Defaults to `6`.
+    - `puzzle` The puzzle to solve. If absent, the game generates a puzzle with the default `puzzle_size`.
+    - `puzzle_size` The length of the puzzle. This option is ignored if a custom puzzle is provided. Defaults to `5`.
+    - `moves_allowed` The maximum number of guesses the player can make before the game finishes. Defaults to `6`.
 
   """
   def create_game(opts \\ []) do
