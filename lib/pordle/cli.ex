@@ -49,7 +49,7 @@ defmodule Pordle.CLI do
       |> start_server()
 
     server
-    |> Pordle.get_game()
+    |> Game.get_game()
     |> render_board()
 
     receive_command(server)
@@ -142,7 +142,7 @@ defmodule Pordle.CLI do
 
   defp play_move(server, guess) do
     server
-    |> Pordle.put_player_move(guess)
+    |> Game.play_move(guess)
     |> case do
       {:ok, %Game{result: :won, moves_made: moves_made} = game} ->
         narrate(:player_move, move: guess)
