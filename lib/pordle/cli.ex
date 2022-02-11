@@ -46,7 +46,13 @@ defmodule Pordle.CLI do
     options
   end
 
-  defp render_state(%Game{board: board, moves_made: moves_made, moves_allowed: moves_allowed, keys: keys, result: result}) do
+  defp render_state(%Game{
+         board: board,
+         moves_made: moves_made,
+         moves_allowed: moves_allowed,
+         keys: keys,
+         result: result
+       }) do
     Narrator.narrate(:game_board, moves_made: moves_made)
     print_board(board)
 
@@ -55,7 +61,8 @@ defmodule Pordle.CLI do
       print_keys(keys)
     end
 
-    unless result, do: Narrator.narrate(:moves_remaining, moves_remaining: moves_allowed - moves_made)
+    unless result,
+      do: Narrator.narrate(:moves_remaining, moves_remaining: moves_allowed - moves_made)
   end
 
   defp receive_command(server) do
