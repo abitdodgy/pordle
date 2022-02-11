@@ -20,6 +20,9 @@ defmodule Pordle do
       iex> Pordle.create_game()
       {:ok, pid}
 
+      iex> Pordle.create_game(puzzle: "crate")
+      {:ok, pid}
+
       iex> Pordle.create_game(puzzle_size: 6, moves_allowed: 5)
       {:ok, pid}
 

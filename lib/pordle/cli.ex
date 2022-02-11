@@ -10,7 +10,7 @@ defmodule Pordle.CLI do
 
   Welcome to Pordle CLI. Type `:help` for help. Type `:quit` to quit. Good luck!
   """
-  alias Pordle.Game
+  alias Pordle.{GameServer, Game}
 
   @narrator [
     game_won: " 🤩 Congratulations, you won in {{moves_made}} guess(es)! 🏆",
@@ -49,7 +49,7 @@ defmodule Pordle.CLI do
       |> start_server()
 
     server
-    |> Game.get_game()
+    |> GameServer.get_state()
     |> render_board()
 
     receive_command(server)
@@ -142,7 +142,7 @@ defmodule Pordle.CLI do
 
   defp play_move(server, guess) do
     server
-    |> Game.play_move(guess)
+    |> GameServer.play_move(guess)
     |> case do
       {:ok, %Game{result: :won, moves_made: moves_made} = game} ->
         narrate(:player_move, move: guess)

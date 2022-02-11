@@ -24,6 +24,6 @@ defmodule Pordle.GameSupervisor do
 
   """
   def start_child(opts) do
-    DynamicSupervisor.start_child(__MODULE__, {Pordle.Game, opts})
+    DynamicSupervisor.start_child(__MODULE__, {Pordle.GameServer, opts})
   end
 end

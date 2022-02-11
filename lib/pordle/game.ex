@@ -3,9 +3,7 @@ defmodule Pordle.Game do
   Pordle game server. For game logic, see `Pordle.Game`.
 
   """
-  use GenServer, restart: :temporary
-
-  alias Pordle.{Game, Dictionary}
+  alias Pordle.Game
 
   @typedoc """
   A Pordle game type, e.g. `%Game{}`.
@@ -29,29 +27,12 @@ defmodule Pordle.Game do
             moves_made: 0
 
   @doc """
-  Starts a supervised game server with the given `opts`. Uses `via_tuple` to customise the process registry.
+  Returns a new game struct with the given values. Generates a `board` if one isn't passed in.
 
   ## Examples
 
-      iex> {:ok, pid} = GameServer.start_link(opts)
-      {:ok, pid}
-
-  """
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts, name: via_tuple(puid()))
-  end
-
-  defp via_tuple(name) do
-    Pordle.GameRegistry.via_tuple({__MODULE__, name})
-  end
-
-  @doc """
-  Returns a new game struct with the given values.
-
-  ## Examples
-
-      iex> new(opts)
-      %Game{}
+      iex> new([puzzle: "crate", puzzle_size: 5, ...])
+      %Game{puzzle: "crate", puzzle_size: 5, ...}
 
   """
   def new(opts) do
@@ -61,41 +42,31 @@ defmodule Pordle.Game do
   end
 
   @doc """
-  Returns the game struct for the given `server`.
+  Adds the given `move` to the given game's `board` and updates the `moves_made` counter and `result`.
 
   ## Examples
 
-      iex> get_game(server)
-      %Game{}
+      iex> play_move(%Game{board: [{nil, :empty}, ...], moves_made: 1}, "crate")
+      %Game{board: [{"c", :hit}, ...], moves_made: 2}
 
   """
-  def get_game(server) do
-    GenServer.call(server, :get_game)
-  end
+  def play_move(game, move) do
+    case validate_move(game, move) do
+      {:ok, move} ->
+        game =
+          game
+          |> put_move(move)
+          |> put_result(move)
 
-  @doc """
-  Sends the player move for the given `server`.
+        {:ok, game}
 
-  ## Examples
-
-      iex> play_move(server, move)
-      {:ok, pid}
-
-  """
-  def play_move(server, move) do
-    word = sanitize(move)
-
-    cond do
-      Dictionary.valid_entry?(word) ->
-        GenServer.call(server, {:play_move, word})
-
-      true ->
-        {:error, :word_not_found}
+      error ->
+        error
     end
   end
 
   @doc """
-  Returns whether the game is finished. If the `result` is not `nil`, it's considered finished.
+  Returns whether the game is finished. The game is considered finished if `result` is not `nil`.
 
   ## Examples
 
@@ -108,85 +79,40 @@ defmodule Pordle.Game do
   """
   def finished?(%Game{result: result}), do: not is_nil(result)
 
-  @impl true
-  def init(opts) do
-    puzzle = get_puzzle(opts)
-
-    game =
-      opts
-      |> Keyword.put(:puzzle, puzzle)
-      |> Keyword.put(:puzzle_size, String.length(puzzle))
-      |> Game.new()
-
-    {:ok, game}
-  end
-
-  @impl true
-  def handle_call({:play_move, move}, _from, %Game{puzzle: puzzle} = state) do
-    if valid_move?(puzzle, move) do
-      state
-      |> put_move(move)
-      |> put_result(move)
-      |> then(fn new_state ->
-        if finished?(new_state), do: {:stop, :normal, {:ok, new_state}, new_state}, else: {:reply, {:ok, new_state}, new_state}
-      end)
-    else
-      {:reply, {:error, :invalid_move}, state}
-    end
-  end
-
-  @impl true
-  def handle_call(:get_game, _from, state) do
-    {:reply, state, state}
-  end
-
-  defp get_puzzle(opts) do
-    puzzle = Keyword.get(opts, :puzzle)
-
-    if is_nil(puzzle) do
-      opts
-      |> Keyword.get(:puzzle_size, default_puzzle_size())
-      |> Dictionary.get()
-    else
-      puzzle
-    end
-    |> sanitize()
-  end
-
-  defp put_board(
-         %Game{moves_allowed: moves_allowed, puzzle_size: puzzle_size, board: board} = game
-       ) do
+  defp validate_move(%Game{puzzle: puzzle}, move) do
     cond do
-      is_nil(board) ->
-        size = 1..(moves_allowed * puzzle_size)
-
-        for(_row <- size, into: [], do: {nil, :empty})
-        |> Enum.chunk_every(puzzle_size)
-        |> then(fn board -> Map.put(game, :board, board) end)
+      String.length(puzzle) == String.length(move) ->
+        {:ok, move}
 
       true ->
-        game
+        {:error, :invalid_move}
     end
   end
 
-  defp default_puzzle_size, do: Map.get(__MODULE__.__struct__(), :puzzle_size)
+  defp put_board(%Game{board: board} = game) when is_list(board), do: game
 
-  defp valid_move?(puzzle, move) do
-    String.length(puzzle) == String.length(move)
+  defp put_board(%Game{board: nil, puzzle_size: puzzle_size, moves_allowed: moves_allowed} = game) do
+    size = 1..(moves_allowed * puzzle_size)
+
+    for(_row <- size, into: [], do: {nil, :empty})
+    |> Enum.chunk_every(puzzle_size)
+    |> then(fn board ->
+      Map.put(game, :board, board)
+    end)
   end
 
-  defp put_move(%Game{puzzle: puzzle, moves_made: moves_made} = state, move) do
+  defp put_move(%Game{puzzle: puzzle, moves_made: moves_made} = game, move) do
     parsed_move = parse_move(puzzle, move)
 
-    state
+    game
     |> Map.update!(:board, fn board ->
       List.replace_at(board, moves_made, parsed_move)
     end)
     |> Map.update!(:moves_made, &(&1 + 1))
   end
 
-  defp put_result(%Game{board: board, puzzle: puzzle} = state, move) do
-    Map.update!(state, :result, fn result ->
+  defp put_result(%Game{board: board, puzzle: puzzle} = game, move) do
+    Map.update!(game, :result, fn result ->
       cond do
         puzzle == move ->
           :won
@@ -198,6 +124,14 @@ defmodule Pordle.Game do
           result
       end
     end)
+  end
+
+  defp board_full?(board) do
+    not (board
+         |> List.flatten()
+         |> Enum.any?(fn {char, _type} ->
+           is_nil(char)
+         end))
   end
 
   defp parse_move(puzzle, answer) do
@@ -230,24 +164,4 @@ defmodule Pordle.Game do
   end
 
   defp to_list(string), do: String.codepoints(string)
-
-  defp sanitize(string) do
-    string
-    |> String.downcase()
-    |> String.trim()
-  end
-
-  defp puid(size \\ 15) do
-    size
-    |> :crypto.strong_rand_bytes()
-    |> Base.url_encode64(padding: false)
-  end
-
-  def board_full?(board) do
-    not (board
-         |> List.flatten()
-         |> Enum.any?(fn {char, _type} ->
-           is_nil(char)
-         end))
-  end
 end

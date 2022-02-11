@@ -1,4 +1,4 @@
-defmodule Pordle.Dictionary do
+defmodule Pordle.Puzzle do
   @dictionary ~w[
   	steam
   	storm
@@ -29,11 +29,11 @@ defmodule Pordle.Dictionary do
     scream
   ]
 
-  def get(size) do
+  def new(size) do
     @dictionary
     |> Enum.filter(&(String.length(&1) == size))
     |> Enum.random()
   end
 
-  def valid_entry?(entry), do: Enum.member?(@dictionary, entry)
+  def valid?(entry), do: Enum.member?(@dictionary, entry)
 end
