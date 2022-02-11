@@ -25,6 +25,12 @@ defmodule Pordle.CLI do
     receive_command(server)
   end
 
+  @doc"""
+  Renders the given character with a formatted background.
+
+  """
+  def cell(char, state), do: @cell_colors[state] <> " #{char} " <> IO.ANSI.reset() <> "\s"
+
   defp parse_args(args) do
     {options, _, _} =
       OptionParser.parse(args,
@@ -83,16 +89,16 @@ defmodule Pordle.CLI do
 
   defp print_board(board) do
     Enum.each(board, fn row ->
-      IO.write("\t")
+      tab()
       Enum.each(row, &draw_cell/1)
-      IO.puts("\n")
+      line()
     end)
   end
 
   defp print_keys(keys) do
-    IO.write("\t")
+    tab()
     Enum.each(keys, &draw_cell/1)
-    IO.puts("\n")
+    line()
   end
 
   defp play_move(server, guess) do
@@ -127,7 +133,7 @@ defmodule Pordle.CLI do
     end
   end
 
-  def draw_cell({char, state}) do
+  defp draw_cell({char, state}) do
     char = if is_nil(char), do: "\s", else: String.upcase(char)
 
     char
@@ -135,5 +141,6 @@ defmodule Pordle.CLI do
     |> IO.write()
   end
 
-  def cell(char, state), do: @cell_colors[state] <> " #{char} " <> IO.ANSI.reset() <> "\s"
+  defp tab(), do: IO.write("\t")
+  defp line(), do: IO.puts("\n")
 end
