@@ -17,7 +17,16 @@ defmodule Pordle.GameServer do
 
   """
   def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts, name: via_tuple(puid()))
+    {name, opts} =
+      Keyword.get_and_update(opts, :name, fn current_name ->
+        if is_nil(current_name) do
+          {current_name, puid()}
+        else
+          {current_name, current_name}
+        end
+      end)
+
+    GenServer.start_link(__MODULE__, opts, name: via_tuple(name))
   end
 
   defp via_tuple(name) do
