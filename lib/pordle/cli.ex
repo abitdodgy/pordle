@@ -25,7 +25,7 @@ defmodule Pordle.CLI do
     receive_command(server)
   end
 
-  @doc"""
+  @doc """
   Renders the given character with a formatted background.
 
   """

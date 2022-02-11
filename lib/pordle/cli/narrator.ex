@@ -39,7 +39,7 @@ defmodule Pordle.CLI.Narrator do
     player_move: "\n🤔 You guessed {{move}}.",
     invalid_move: "\n🙄 The word {{move}} is not the correct length.",
     word_not_found: "\n🤭 The word {{word}} was not found in the dictionary.",
-    quit: "\n🤬 You suck!",
+    quit: "\n🤬 You suck!"
   ]
 
   @doc """
