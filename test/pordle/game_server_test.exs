@@ -114,6 +114,26 @@ defmodule Pordle.GameServerTest do
     Process.exit(server, :normal)
   end
 
+  test "play_move/1 sanitizes move" do
+    assert {:ok, server} = GameServer.start_link(puzzle: "crate", moves_allowed: 1)
+
+    {:ok,
+     %Game{
+       board: [
+         [
+           {"s", :miss},
+           {"l", :miss},
+           {"a", :hit},
+           {"t", :hit},
+           {"e", :hit}
+         ]
+       ],
+       keys: [{"s", :miss}, {"l", :miss}, {"a", :hit}, {"t", :hit}, {"e", :hit}]
+     }} = GameServer.play_move(server, " SLatE ")
+
+    Process.exit(server, :normal)
+  end
+
   test "get_state/1 returns the state of the given server" do
     assert {:ok, server} = GameServer.start_link(puzzle: "crate", moves_allowed: 1)
 
