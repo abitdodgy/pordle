@@ -23,20 +23,15 @@ defmodule Pordle.GameServerTest do
   end
 
   test "start_link/1 accepts a custom `name`, `puzzle`, and `moves_allowed` as options" do
-    assert {:ok, server} =
-             GameServer.start_link(name: "custom", puzzle: "amazing", moves_allowed: 1)
+    assert {:ok, server} = GameServer.start_link(name: "custom", puzzle: "foo", moves_allowed: 1)
 
     %Game{
       name: "custom",
-      puzzle: "amazing",
-      puzzle_size: 7,
+      puzzle: "foo",
+      puzzle_size: 3,
       moves_allowed: 1,
       board: [
         [
-          nil: :empty,
-          nil: :empty,
-          nil: :empty,
-          nil: :empty,
           nil: :empty,
           nil: :empty,
           nil: :empty
@@ -48,16 +43,13 @@ defmodule Pordle.GameServerTest do
   end
 
   test "start_link/1 accepts a `puzzle_size` option" do
-    assert {:ok, server} = GameServer.start_link(puzzle_size: 6, moves_allowed: 1)
+    assert {:ok, server} = GameServer.start_link(puzzle_size: 3, moves_allowed: 1)
 
     %Game{
       puzzle: puzzle,
-      puzzle_size: 6,
+      puzzle_size: 3,
       board: [
         [
-          nil: :empty,
-          nil: :empty,
-          nil: :empty,
           nil: :empty,
           nil: :empty,
           nil: :empty
@@ -79,7 +71,7 @@ defmodule Pordle.GameServerTest do
   end
 
   test "play_move/1 updates server state" do
-    assert {:ok, server} = GameServer.start_link(puzzle: "crate", moves_allowed: 2)
+    assert {:ok, server} = GameServer.start_link(puzzle: "crate", moves_allowed: 1)
 
     {:ok,
      %Game{
@@ -91,13 +83,6 @@ defmodule Pordle.GameServerTest do
            {"a", :hit},
            {"t", :hit},
            {"e", :hit}
-         ],
-         [
-           nil: :empty,
-           nil: :empty,
-           nil: :empty,
-           nil: :empty,
-           nil: :empty
          ]
        ],
        keys: [{"s", :miss}, {"l", :miss}, {"a", :hit}, {"t", :hit}, {"e", :hit}]
@@ -135,16 +120,14 @@ defmodule Pordle.GameServerTest do
   end
 
   test "get_state/1 returns the state of the given server" do
-    assert {:ok, server} = GameServer.start_link(puzzle: "crate", moves_allowed: 1)
+    assert {:ok, server} = GameServer.start_link(puzzle: "foo", moves_allowed: 1)
 
     {:ok,
      %Game{
-       puzzle: "crate",
+       puzzle: "foo",
        moves_allowed: 1,
        board: [
          [
-           nil: :empty,
-           nil: :empty,
            nil: :empty,
            nil: :empty,
            nil: :empty

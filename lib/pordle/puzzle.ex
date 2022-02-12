@@ -1,5 +1,7 @@
 defmodule Pordle.Puzzle do
   @dictionary ~w[
+    foo
+
   	steam
   	storm
   	least
