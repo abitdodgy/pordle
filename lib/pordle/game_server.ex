@@ -12,7 +12,7 @@ defmodule Pordle.GameServer do
 
   ## Examples
 
-      iex> {:ok, pid} = GameServer.start_link(opts)
+      iex> start_link(opts)
       {:ok, pid}
 
   """
@@ -29,7 +29,16 @@ defmodule Pordle.GameServer do
     GenServer.start_link(__MODULE__, opts, name: via_tuple(name))
   end
 
-  defp via_tuple(name) do
+  @doc """
+  Returns the process with the given `name` from Registry.
+
+  ## Examples
+
+      iex> via_tuple("my game")
+      {:ok, pid}
+
+  """
+  def via_tuple(name) do
     Pordle.GameRegistry.via_tuple({__MODULE__, name})
   end
 

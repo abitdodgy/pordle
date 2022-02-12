@@ -17,6 +17,7 @@ defmodule Pordle.Puzzle do
   	slate
   	heart
     crate
+    hello
 
     bubble
     bbblue
