@@ -78,11 +78,12 @@ defmodule Pordle.GameServerTest do
     Process.exit(server, :normal)
   end
 
-  test "play_move/1" do
+  test "play_move/1 updates server state" do
     assert {:ok, server} = GameServer.start_link(puzzle: "crate", moves_allowed: 2)
 
     {:ok,
      %Game{
+       moves_made: 1,
        board: [
          [
            {"s", :miss},
@@ -113,5 +114,22 @@ defmodule Pordle.GameServerTest do
     Process.exit(server, :normal)
   end
 
-  test "get_state/1 returns the state of the given server"
+  test "get_state/1 returns the state of the given server" do
+    assert {:ok, server} = GameServer.start_link(puzzle: "crate", moves_allowed: 1)
+
+    {:ok,
+     %Game{
+       puzzle: "crate",
+       moves_allowed: 1,
+       board: [
+         [
+           nil: :empty,
+           nil: :empty,
+           nil: :empty,
+           nil: :empty,
+           nil: :empty
+         ]
+       ]
+     }} = GameServer.get_state(server)
+  end
 end
