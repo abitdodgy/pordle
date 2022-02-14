@@ -29,6 +29,24 @@ defmodule Pordle.GameServer do
     GenServer.start_link(__MODULE__, opts, name: via_tuple(name))
   end
 
+  @impl true
+  def init(opts) do
+    puzzle =
+      Keyword.get_lazy(opts, :puzzle, fn ->
+        opts
+        |> Keyword.get(:puzzle_size, default_puzzle_size())
+        |> Puzzle.new()
+      end)
+
+    game =
+      opts
+      |> Keyword.put(:puzzle, puzzle)
+      |> Keyword.put(:puzzle_size, String.length(puzzle))
+      |> Game.new()
+
+    {:ok, game}
+  end
+
   @doc """
   Returns the process with the given `name` from Registry.
 
@@ -83,24 +101,6 @@ defmodule Pordle.GameServer do
   end
 
   @impl true
-  def init(opts) do
-    puzzle =
-      Keyword.get_lazy(opts, :puzzle, fn ->
-        opts
-        |> Keyword.get(:puzzle_size, Application.fetch_env!(:pordle, :default_puzzle_size))
-        |> Puzzle.new()
-      end)
-
-    game =
-      opts
-      |> Keyword.put(:puzzle, puzzle)
-      |> Keyword.put(:puzzle_size, String.length(puzzle))
-      |> Game.new()
-
-    {:ok, game}
-  end
-
-  @impl true
   def handle_call({:play_move, move}, _from, state) do
     case Game.play_move(state, move) do
       {:ok, new_state} ->
@@ -124,5 +124,9 @@ defmodule Pordle.GameServer do
     string
     |> String.downcase()
     |> String.trim()
+  end
+
+  defp default_puzzle_size do
+    Application.fetch_env!(:pordle, :default_puzzle_size)
   end
 end

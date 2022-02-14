@@ -5,8 +5,6 @@ defmodule Pordle.CLI.Narrator do
   """
   alias Pordle.CLI
 
-  @highlight_color Application.fetch_env!(:pordle, :colors)[:highlight]
-
   @lines [
     game_start: ~s"""
 
@@ -23,9 +21,9 @@ defmodule Pordle.CLI.Narrator do
 
     😀 Try to guess the word before you run out of guesses.
 
-        - #{CLI.cell("A", :hit)} The letter A is in the word and in the right place.
-        - #{CLI.cell("A", :nearly)} The letter A is in the word but it's in the wrong place.
-        - #{CLI.cell("A", :miss)} The letter A is not in the word.
+        - #{"A"} The letter A is in the word and in the right place.
+        - #{"A"} The letter A is in the word but it's in the wrong place.
+        - #{"A"} The letter A is not in the word.
 
       Type `:quit` to quit the game.
     """,
@@ -82,5 +80,9 @@ defmodule Pordle.CLI.Narrator do
   """
   def get_line(line), do: @lines[line]
 
-  defp highlight(char), do: @highlight_color <> "#{char}" <> IO.ANSI.reset()
+  defp highlight(char), do: highlight_color() <> "#{char}" <> IO.ANSI.reset()
+
+  defp highlight_color do
+    Application.fetch_env!(:pordle, :colors)[:highlight]
+  end
 end
