@@ -1,6 +1,6 @@
 defmodule Pordle.GameSupervisor do
   @moduledoc """
-  Handles the creation of game servers.
+  Supervises game servers.
 
   """
   use DynamicSupervisor
@@ -15,7 +15,7 @@ defmodule Pordle.GameSupervisor do
   end
 
   @doc """
-  Creates a new game server with the given options. 
+  Creates a supervised game server with the given options. 
 
   ## Examples
 

@@ -15,17 +15,13 @@ defmodule Pordle.GameServer do
       iex> start_link(opts)
       {:ok, pid}
 
+  ## Options
+
+    - `name` A required game identifier that is used for the process registry.
+
   """
   def start_link(opts) do
-    {name, opts} =
-      Keyword.get_and_update(opts, :name, fn current_name ->
-        if is_nil(current_name) do
-          {current_name, puid()}
-        else
-          {current_name, current_name}
-        end
-      end)
-
+    name = Keyword.fetch!(opts, :name)
     GenServer.start_link(__MODULE__, opts, name: via_tuple(name))
   end
 
@@ -45,25 +41,6 @@ defmodule Pordle.GameServer do
       |> Game.new()
 
     {:ok, game}
-  end
-
-  @doc """
-  Returns the process with the given `name` from Registry.
-
-  ## Examples
-
-      iex> via_tuple("my game")
-      {:ok, pid}
-
-  """
-  def via_tuple(name) do
-    Pordle.GameRegistry.via_tuple({__MODULE__, name})
-  end
-
-  defp puid(size \\ 15) do
-    size
-    |> :crypto.strong_rand_bytes()
-    |> Base.url_encode64(padding: false)
   end
 
   @doc """
@@ -124,6 +101,10 @@ defmodule Pordle.GameServer do
     string
     |> String.downcase()
     |> String.trim()
+  end
+
+  defp via_tuple(name) do
+    Pordle.GameRegistry.via_tuple({__MODULE__, name})
   end
 
   defp default_puzzle_size do

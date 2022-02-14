@@ -21,9 +21,9 @@ defmodule Pordle.CLI.Narrator do
 
     😀 Try to guess the word before you run out of guesses.
 
-        - #{"A"} The letter A is in the word and in the right place.
-        - #{"A"} The letter A is in the word but it's in the wrong place.
-        - #{"A"} The letter A is not in the word.
+        - #{CLI.cell("A", :hit)} The letter A is in the word and in the right place.
+        - #{CLI.cell("A", :nearly)} The letter A is in the word but it's in the wrong place.
+        - #{CLI.cell("A", :miss)} The letter A is not in the word.
 
       Type `:quit` to quit the game.
     """,

@@ -20,12 +20,12 @@ defmodule Pordle.Game do
         }
 
   defstruct name: nil,
-            board: nil,
             puzzle: nil,
             result: nil,
             puzzle_size: 5,
             moves_allowed: 6,
             moves_made: 0,
+            board: [],
             keys: []
 
   @doc """
@@ -92,16 +92,18 @@ defmodule Pordle.Game do
     end
   end
 
-  defp put_board(%Game{board: board} = game) when is_list(board), do: game
+  defp put_board(%Game{board: board, puzzle_size: puzzle_size, moves_allowed: moves_allowed} = game) do
+    if Enum.empty?(board) do
+      size = 1..(moves_allowed * puzzle_size)
 
-  defp put_board(%Game{board: nil, puzzle_size: puzzle_size, moves_allowed: moves_allowed} = game) do
-    size = 1..(moves_allowed * puzzle_size)
-
-    for(_row <- size, into: [], do: {nil, :empty})
-    |> Enum.chunk_every(puzzle_size)
-    |> then(fn board ->
-      Map.put(game, :board, board)
-    end)
+      for(_row <- size, into: [], do: {nil, :empty})
+      |> Enum.chunk_every(puzzle_size)
+      |> then(fn board ->
+        Map.put(game, :board, board)
+      end)
+    else
+      board
+    end
   end
 
   defp put_move(%Game{puzzle: puzzle, moves_made: moves_made} = game, move) do
