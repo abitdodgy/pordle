@@ -38,7 +38,7 @@ defmodule Pordle do
   """
   def create_game(opts \\ []) do
     opts
-    |> Keyword.put_new(:name, &puid/1)
+    |> Keyword.put_new(:name, puid())
     |> GameSupervisor.start_child()
   end
 

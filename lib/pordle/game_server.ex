@@ -25,6 +25,10 @@ defmodule Pordle.GameServer do
     GenServer.start_link(__MODULE__, opts, name: via_tuple(name))
   end
 
+  defp via_tuple(name) do
+    Pordle.GameRegistry.via_tuple({__MODULE__, name})
+  end
+
   @impl true
   def init(opts) do
     puzzle =
@@ -101,10 +105,6 @@ defmodule Pordle.GameServer do
     string
     |> String.downcase()
     |> String.trim()
-  end
-
-  defp via_tuple(name) do
-    Pordle.GameRegistry.via_tuple({__MODULE__, name})
   end
 
   defp default_puzzle_size do

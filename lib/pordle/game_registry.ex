@@ -9,8 +9,8 @@ defmodule Pordle.GameRegistry do
 
   ## Examples
 
-      iex> via_tuple("1")
-      {:via, Registry, {GameRegistry, "1"}}
+      iex> via_tuple({GameServer, "1"})
+      {:via, Registry, {GameRegistry, {GameServer, "1"}}}
 
   """
   def via_tuple(id) do
