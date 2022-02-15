@@ -1,6 +1,7 @@
 defmodule Pordle.Puzzle do
   @dictionary ~w[
     foo
+    foobar
 
   	steam
   	storm

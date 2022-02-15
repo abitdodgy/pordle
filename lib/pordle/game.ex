@@ -5,6 +5,8 @@ defmodule Pordle.Game do
   """
   alias Pordle.Game
 
+  @enforce_keys [:name, :puzzle]
+
   @typedoc """
   A Pordle game type, e.g. `%Game{}`.
   """
@@ -28,6 +30,8 @@ defmodule Pordle.Game do
             board: [],
             keys: []
 
+  # @valid_attrs ~w[name puzzle moves_allowed result moves_made board keys]
+
   @doc """
   Returns a new game struct with the given values. Generates a `board` if one isn't passed in.
 
@@ -40,6 +44,7 @@ defmodule Pordle.Game do
   def new(opts) do
     __MODULE__
     |> struct!(opts)
+    |> put_puzzle_size()
     |> put_board()
   end
 
@@ -82,17 +87,13 @@ defmodule Pordle.Game do
   """
   def finished?(%Game{result: result}), do: not is_nil(result)
 
-  defp validate_move(%Game{puzzle: puzzle}, move) do
-    cond do
-      String.length(puzzle) == String.length(move) ->
-        {:ok, move}
-
-      true ->
-        {:error, :invalid_move}
-    end
+  defp put_puzzle_size(%Game{puzzle: puzzle} = game) do
+    Map.put(game, :puzzle_size, String.length(puzzle))
   end
 
-  defp put_board(%Game{board: board, puzzle_size: puzzle_size, moves_allowed: moves_allowed} = game) do
+  defp put_board(
+         %Game{board: board, puzzle_size: puzzle_size, moves_allowed: moves_allowed} = game
+       ) do
     if Enum.empty?(board) do
       size = 1..(moves_allowed * puzzle_size)
 
@@ -103,6 +104,16 @@ defmodule Pordle.Game do
       end)
     else
       board
+    end
+  end
+
+  defp validate_move(%Game{puzzle: puzzle}, move) do
+    cond do
+      String.length(puzzle) == String.length(move) ->
+        {:ok, move}
+
+      true ->
+        {:error, :invalid_move}
     end
   end
 
