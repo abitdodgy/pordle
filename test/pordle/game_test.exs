@@ -93,6 +93,13 @@ defmodule Pordle.GameTest do
 
 
       # TODO: Add other scenarios.
+      #
+      # {:ok, %Game{} = game} = Game.play_move(game, "lllma")
+      # assert %Game{
+      #          board: [
+      #            [{"l", :nearly}, {"l", :nearly}, {"l", :miss}, _, _], _, _
+      #          ]
+      #        } = game
     end
   end
 
