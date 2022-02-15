@@ -80,9 +80,7 @@ defmodule Pordle.CLI.Narrator do
   """
   def get_line(line), do: @lines[line]
 
-  defp highlight(char), do: highlight_color() <> "#{char}" <> IO.ANSI.reset()
-
-  defp highlight_color do
-    Application.fetch_env!(:pordle, :colors)[:highlight]
+  defp highlight(char) do
+    CLI.Theme.color(:highlight) <> "#{char}" <> IO.ANSI.reset()
   end
 end

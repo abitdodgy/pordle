@@ -5,7 +5,7 @@ defmodule Pordle.GameServer do
   """
   use GenServer, restart: :temporary
 
-  alias Pordle.{Game, Puzzle}
+  alias Pordle.Game
 
   @doc """
   Starts a supervised game server with the given `opts`. Uses `via_tuple` to customise the process registry.
@@ -34,8 +34,8 @@ defmodule Pordle.GameServer do
     puzzle =
       Keyword.get_lazy(opts, :puzzle, fn ->
         opts
-        |> Keyword.get(:puzzle_size, default_puzzle_size())
-        |> Puzzle.new()
+        |> Keyword.get(:puzzle_size, config(:default_puzzle_size))
+        |> config(:dictionary).new()
       end)
 
     game =
@@ -72,7 +72,7 @@ defmodule Pordle.GameServer do
     word = sanitize(move)
 
     cond do
-      Puzzle.valid?(word) ->
+      config(:dictionary).valid?(word) ->
         GenServer.call(server, {:play_move, word})
 
       true ->
@@ -106,7 +106,7 @@ defmodule Pordle.GameServer do
     |> String.trim()
   end
 
-  defp default_puzzle_size do
-    Application.fetch_env!(:pordle, :default_puzzle_size)
+  defp config(key) do
+    Application.fetch_env!(:pordle, key)
   end
 end

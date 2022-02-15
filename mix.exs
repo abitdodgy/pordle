@@ -7,6 +7,7 @@ defmodule Pordle.MixProject do
       version: "0.1.0",
       elixir: "~> 1.13",
       escript: escript_config(),
+      elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
@@ -32,4 +33,7 @@ defmodule Pordle.MixProject do
   defp escript_config do
     [main_module: Pordle.CLI]
   end
+
+  def elixirc_paths(:prod), do: ["lib"]
+  def elixirc_paths(_env), do: ["lib", "test/support"]
 end
