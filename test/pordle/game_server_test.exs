@@ -125,6 +125,29 @@ defmodule Pordle.GameServerTest do
     end
   end
 
+  test "play_move/2 shuts down process when game is won" do
+    {:ok, server} =
+      GameServer.start_link(name: :rand.uniform(10000), puzzle: "crate", moves_allowed: 2)
+
+    assert Process.alive?(server)
+
+    {:ok, _state} = GameServer.play_move(server, "crate")
+    refute Process.alive?(server)
+  end
+
+  test "play_move/2 shuts down process when game is lost" do
+    {:ok, server} =
+      GameServer.start_link(name: :rand.uniform(10000), puzzle: "crate", moves_allowed: 2)
+
+    assert Process.alive?(server)
+
+    {:ok, _state} = GameServer.play_move(server, "slate")
+    assert Process.alive?(server)
+
+    {:ok, _state} = GameServer.play_move(server, "slate")
+    refute Process.alive?(server)
+  end
+
   defp assert_initial_state(server) do
     assert %Game{
              moves_made: 0,
