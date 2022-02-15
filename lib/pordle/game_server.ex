@@ -41,7 +41,6 @@ defmodule Pordle.GameServer do
     game =
       opts
       |> Keyword.put(:puzzle, puzzle)
-      |> Keyword.put(:puzzle_size, String.length(puzzle))
       |> Game.new()
 
     {:ok, game}
