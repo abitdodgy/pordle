@@ -38,8 +38,7 @@ defmodule Pordle.GameTest do
                moves_allowed: 2,
                moves_made: 1,
                board: [
-                 [{"h", :miss}, {"e", :nearly}, {"a", :hit}, {"r", :nearly}, {"t", :nearly}],
-                 [nil: :empty, nil: :empty, nil: :empty, nil: :empty, nil: :empty]
+                 [{"h", :miss}, {"e", :nearly}, {"a", :hit}, {"r", :nearly}, {"t", :nearly}], _
                ],
                keys: [{"h", :miss}, {"e", :nearly}, {"a", :hit}, {"r", :nearly}, {"t", :nearly}]
              } = game
@@ -53,8 +52,7 @@ defmodule Pordle.GameTest do
                moves_allowed: 2,
                moves_made: 1,
                board: [
-                 [{"c", :hit}, {"r", :hit}, {"a", :hit}, {"t", :hit}, {"e", :hit}],
-                 [nil: :empty, nil: :empty, nil: :empty, nil: :empty, nil: :empty]
+                 [{"c", :hit}, {"r", :hit}, {"a", :hit}, {"t", :hit}, {"e", :hit}], _
                ],
                keys: [{"c", :hit}, {"r", :hit}, {"a", :hit}, {"t", :hit}, {"e", :hit}]
              } = game
