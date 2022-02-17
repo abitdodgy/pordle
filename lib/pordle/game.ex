@@ -44,8 +44,8 @@ defmodule Pordle.Game do
   def new(opts) do
     __MODULE__
     |> struct!(opts)
-    |> put_puzzle_size()
-    |> put_board()
+    |> init_puzzle_size()
+    |> init_board()
   end
 
   @doc """
@@ -62,9 +62,10 @@ defmodule Pordle.Game do
       {:ok, move} ->
         game =
           game
-          |> put_move(move)
+          |> put_moves(move)
+          |> put_board(move)
           |> put_result(move)
-          |> put_keys()
+          |> put_keyboard()
 
         {:ok, game}
 
@@ -87,11 +88,11 @@ defmodule Pordle.Game do
   """
   def finished?(%Game{result: result}), do: not is_nil(result)
 
-  defp put_puzzle_size(%Game{puzzle: puzzle} = game) do
+  defp init_puzzle_size(%Game{puzzle: puzzle} = game) do
     Map.put(game, :puzzle_size, String.length(puzzle))
   end
 
-  defp put_board(
+  defp init_board(
          %Game{board: board, puzzle_size: puzzle_size, moves_allowed: moves_allowed} = game
        ) do
     if Enum.empty?(board) do
@@ -117,17 +118,17 @@ defmodule Pordle.Game do
     end
   end
 
-  defp put_move(%Game{puzzle: puzzle} = game, move) do
+  defp put_moves(game, move) do
     game
-    |> Map.get_and_update(:moves, &{length(&1), &1 ++ [move]})
-    |> then(fn {index, game} ->
-      parsed_move = parse_move(puzzle, move)
+    |> Map.update!(:moves, &(&1 ++ [move]))
+    |> Map.update!(:moves_made, &(&1 + 1))
+  end
 
-      game
-      |> Map.update!(:board, fn board ->
-        List.replace_at(board, index, parsed_move)
-      end)
-      |> Map.update!(:moves_made, &(&1 + 1))
+  defp put_board(%Game{puzzle: puzzle, moves_made: moves_made} = game, move) do
+    parsed_move = parse_move(puzzle, move)
+
+    Map.update!(game, :board, fn board ->
+      List.replace_at(board, moves_made - 1, parsed_move)
     end)
   end
 
@@ -146,9 +147,10 @@ defmodule Pordle.Game do
     end)
   end
 
-  defp put_keys(%Game{board: board} = game) do
+  defp put_keyboard(game) do
     keys =
-      board
+      game
+      |> Map.get(:board)
       |> List.flatten()
       |> Enum.reject(fn {char, _type} -> is_nil(char) end)
       |> Enum.uniq_by(fn {char, _type} -> char end)
@@ -175,7 +177,7 @@ defmodule Pordle.Game do
         char == Enum.at(puzzle, index) ->
           {char, :hit}
 
-        char in puzzle and count_in_answer(acc, char) < count_in_puzzle(puzzle, char) ->
+        char in puzzle and count_found(acc, char) < count_in_puzzle(puzzle, char) ->
           {char, :nearly}
 
         true ->
@@ -185,7 +187,7 @@ defmodule Pordle.Game do
     end)
   end
 
-  defp count_in_answer(answer, char) do
+  defp count_found(accumulator, char) do
     Enum.count(answer, fn {i, _type} -> i == char end)
   end
 
