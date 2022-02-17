@@ -187,8 +187,8 @@ defmodule Pordle.Game do
     end)
   end
 
-  defp count_found(accumulator, char) do
-    Enum.count(answer, fn {i, _type} -> i == char end)
+  defp count_found(list, char) do
+    Enum.count(list, fn {i, _type} -> i == char end)
   end
 
   defp count_in_puzzle(puzzle, char) do
