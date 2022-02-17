@@ -27,7 +27,8 @@ defmodule Pordle.CLI do
   Renders the given character with a formatted background.
 
   """
-  def cell(char, state), do: Pordle.CLI.Theme.color(state) <> " #{char} " <> IO.ANSI.reset() <> "\s"
+  def cell(char, state),
+    do: Pordle.CLI.Theme.color(state) <> " #{char} " <> IO.ANSI.reset() <> "\s"
 
   defp parse_args(args) do
     {options, _, _} =

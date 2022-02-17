@@ -18,6 +18,7 @@ defmodule Pordle.GameServerTest do
                name: ^name,
                puzzle: puzzle,
                puzzle_size: puzzle_size,
+               moves: [],
                moves_made: 0,
                moves_allowed: 6
              } = :sys.get_state(server)
@@ -78,6 +79,7 @@ defmodule Pordle.GameServerTest do
       {:ok, %Game{} = state} = GameServer.play_move(server, "heart")
 
       assert %Game{
+               moves: ["heart"],
                moves_made: 1,
                board: [
                  [
@@ -111,6 +113,7 @@ defmodule Pordle.GameServerTest do
       {:ok, %Game{} = state} = GameServer.play_move(server, " SLatE ")
 
       assert %Game{
+               moves: ["slate"],
                board: [
                  [
                    {"s", :miss},
@@ -153,9 +156,12 @@ defmodule Pordle.GameServerTest do
 
   defp assert_initial_state(server) do
     assert %Game{
+             moves: [],
              moves_made: 0,
              keys: [],
-             board: [[nil: :empty, nil: :empty, nil: :empty, nil: :empty, nil: :empty]]
+             board: [
+               [nil: :empty, nil: :empty, nil: :empty, nil: :empty, nil: :empty]
+             ]
            } = :sys.get_state(server)
   end
 

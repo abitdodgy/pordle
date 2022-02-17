@@ -14,6 +14,7 @@ defmodule Pordle.GameTest do
       assert %Game{
                puzzle: "crate",
                puzzle_size: 5,
+               moves: [],
                moves_made: 0,
                moves_allowed: 2,
                board: [
@@ -31,50 +32,71 @@ defmodule Pordle.GameTest do
     end
 
     test "with a valid move", %{game: game} do
+      assert_initial_state(game)
+
       {:ok, %Game{} = game} = Game.play_move(game, "heart")
 
       assert %Game{
                result: nil,
-               moves_allowed: 2,
+               moves: ["heart"],
                moves_made: 1,
+               moves_allowed: 2,
                board: [
-                 [{"h", :miss}, {"e", :nearly}, {"a", :hit}, {"r", :nearly}, {"t", :nearly}], _
+                 [{"h", :miss}, {"e", :nearly}, {"a", :hit}, {"r", :nearly}, {"t", :nearly}],
+                 _
                ],
                keys: [{"h", :miss}, {"e", :nearly}, {"a", :hit}, {"r", :nearly}, {"t", :nearly}]
              } = game
     end
 
     test "with a winning move", %{game: game} do
+      assert_initial_state(game)
+
       {:ok, %Game{} = game} = Game.play_move(game, "crate")
 
       assert %Game{
                result: :won,
-               moves_allowed: 2,
+               moves: ["crate"],
                moves_made: 1,
+               moves_allowed: 2,
                board: [
-                 [{"c", :hit}, {"r", :hit}, {"a", :hit}, {"t", :hit}, {"e", :hit}], _
+                 [{"c", :hit}, {"r", :hit}, {"a", :hit}, {"t", :hit}, {"e", :hit}],
+                 _
                ],
                keys: [{"c", :hit}, {"r", :hit}, {"a", :hit}, {"t", :hit}, {"e", :hit}]
              } = game
     end
 
     test "when moves run out", %{game: game} do
+      assert_initial_state(game)
+
       {:ok, %Game{} = game} = Game.play_move(game, "heart")
       {:ok, %Game{} = game} = Game.play_move(game, "slate")
 
       assert %Game{
                result: :lost,
-               moves_allowed: 2,
+               moves: ["heart", "slate"],
                moves_made: 2,
+               moves_allowed: 2,
                board: [
                  [{"h", :miss}, {"e", :nearly}, {"a", :hit}, {"r", :nearly}, {"t", :nearly}],
                  [{"s", :miss}, {"l", :miss}, {"a", :hit}, {"t", :hit}, {"e", :hit}]
                ],
-               keys: [{"h", :miss}, {"e", :nearly}, {"a", :hit}, {"r", :nearly}, {"t", :nearly}, {"s", :miss}, {"l", :miss}]
+               keys: [
+                 {"h", :miss},
+                 {"e", :nearly},
+                 {"a", :hit},
+                 {"r", :nearly},
+                 {"t", :nearly},
+                 {"s", :miss},
+                 {"l", :miss}
+               ]
              } = game
     end
 
     test "when move is not the correct length", %{game: game} do
+      assert_initial_state(game)
+
       {:error, :invalid_move} = Game.play_move(game, "foo")
       {:error, :invalid_move} = Game.play_move(game, "foobar")
     end
@@ -83,12 +105,14 @@ defmodule Pordle.GameTest do
       game = Game.new(name: "foo", puzzle: "small", moves_allowed: 3)
 
       {:ok, %Game{} = game} = Game.play_move(game, "lllma")
+
       assert %Game{
                board: [
-                 [{"l", :nearly}, {"l", :nearly}, {"l", :miss}, _, _], _, _
+                 [{"l", :nearly}, {"l", :nearly}, {"l", :miss}, _, _],
+                 _,
+                 _
                ]
              } = game
-
 
       # TODO: Add other scenarios.
       #
@@ -98,6 +122,19 @@ defmodule Pordle.GameTest do
       #            [{"l", :nearly}, {"l", :nearly}, {"l", :miss}, _, _], _, _
       #          ]
       #        } = game
+      #
+    end
+
+    defp assert_initial_state(game) do
+      assert %Game{
+               moves: [],
+               moves_made: 0,
+               keys: [],
+               board: [
+                 [nil: :empty, nil: :empty, nil: :empty, nil: :empty, nil: :empty],
+                 [nil: :empty, nil: :empty, nil: :empty, nil: :empty, nil: :empty]
+               ]
+             } = game
     end
   end
 

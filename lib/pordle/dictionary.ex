@@ -8,11 +8,11 @@ defmodule Pordle.Dictionary do
   Returns a new puzzle word.
 
   """
-  @callback new(Integer.t) :: String.t
+  @callback new(Integer.t()) :: String.t()
 
   @doc """
   Validates a puzzle word against the dictionary.
 
   """
-  @callback valid?(String.t) :: Boolean
+  @callback valid?(String.t()) :: Boolean
 end

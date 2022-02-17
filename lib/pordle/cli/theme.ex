@@ -1,5 +1,5 @@
 defmodule Pordle.CLI.Theme do
-  @colour_theme Application.fetch_env!(:pordle, :cli)[:theme]
+  @colour_theme Application.compile_env(:pordle, :cli)[:theme]
 
   @doc """
   Returns the color for the given key.

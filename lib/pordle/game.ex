@@ -14,6 +14,7 @@ defmodule Pordle.Game do
           name: String.t(),
           puzzle: nonempty_charlist(),
           puzzle_size: non_neg_integer() | 5,
+          moves: list(String.t()) | [],
           moves_allowed: non_neg_integer() | 6,
           moves_made: non_neg_integer() | 0,
           result: atom() | :lost | :won,
@@ -25,12 +26,11 @@ defmodule Pordle.Game do
             puzzle: nil,
             result: nil,
             puzzle_size: 5,
+            moves: [],
             moves_allowed: 6,
             moves_made: 0,
             board: [],
             keys: []
-
-  # @valid_attrs ~w[name puzzle moves_allowed result moves_made board keys]
 
   @doc """
   Returns a new game struct with the given values. Generates a `board` if one isn't passed in.
@@ -117,14 +117,18 @@ defmodule Pordle.Game do
     end
   end
 
-  defp put_move(%Game{puzzle: puzzle, moves_made: moves_made} = game, move) do
-    parsed_move = parse_move(puzzle, move)
-
+  defp put_move(%Game{puzzle: puzzle} = game, move) do
     game
-    |> Map.update!(:board, fn board ->
-      List.replace_at(board, moves_made, parsed_move)
+    |> Map.get_and_update(:moves, &{length(&1), &1 ++ [move]})
+    |> then(fn {index, game} ->
+      parsed_move = parse_move(puzzle, move)
+
+      game
+      |> Map.update!(:board, fn board ->
+        List.replace_at(board, index, parsed_move)
+      end)
+      |> Map.update!(:moves_made, &(&1 + 1))
     end)
-    |> Map.update!(:moves_made, &(&1 + 1))
   end
 
   defp put_result(%Game{board: board, puzzle: puzzle} = game, move) do
