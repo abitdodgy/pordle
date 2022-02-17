@@ -12,14 +12,14 @@ defmodule Pordle.Game do
   """
   @type t() :: %__MODULE__{
           name: String.t(),
-          puzzle: nonempty_charlist(),
+          puzzle: String.t(),
           puzzle_size: non_neg_integer() | 5,
           moves: list(String.t()) | [],
           moves_allowed: non_neg_integer() | 6,
           moves_made: non_neg_integer() | 0,
           result: atom() | :lost | :won,
           board: list(),
-          keys: list()
+          keyboard: list()
         }
 
   defstruct name: nil,
@@ -30,7 +30,7 @@ defmodule Pordle.Game do
             moves_allowed: 6,
             moves_made: 0,
             board: [],
-            keys: []
+            keyboard: []
 
   @doc """
   Returns a new game struct with the given values. Generates a `board` if one isn't passed in.
@@ -148,14 +148,14 @@ defmodule Pordle.Game do
   end
 
   defp put_keyboard(game) do
-    keys =
+    keyboard =
       game
       |> Map.get(:board)
       |> List.flatten()
       |> Enum.reject(fn {char, _type} -> is_nil(char) end)
       |> Enum.uniq_by(fn {char, _type} -> char end)
 
-    Map.put(game, :keys, keys)
+    Map.put(game, :keyboard, keyboard)
   end
 
   defp board_full?(board) do

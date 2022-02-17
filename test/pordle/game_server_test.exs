@@ -90,7 +90,7 @@ defmodule Pordle.GameServerTest do
                    {"t", :nearly}
                  ]
                ],
-               keys: [{"h", :miss}, {"e", :nearly}, {"a", :hit}, {"r", :nearly}, {"t", :nearly}]
+               keyboard: [{"h", :miss}, {"e", :nearly}, {"a", :hit}, {"r", :nearly}, {"t", :nearly}]
              } = state
     end
 
@@ -123,7 +123,7 @@ defmodule Pordle.GameServerTest do
                    {"e", :hit}
                  ]
                ],
-               keys: [{"s", :miss}, {"l", :miss}, {"a", :hit}, {"t", :hit}, {"e", :hit}]
+               keyboard: [{"s", :miss}, {"l", :miss}, {"a", :hit}, {"t", :hit}, {"e", :hit}]
              } = state
     end
   end
@@ -158,7 +158,7 @@ defmodule Pordle.GameServerTest do
     assert %Game{
              moves: [],
              moves_made: 0,
-             keys: [],
+             keyboard: [],
              board: [
                [nil: :empty, nil: :empty, nil: :empty, nil: :empty, nil: :empty]
              ]

@@ -51,7 +51,7 @@ defmodule Pordle.CLI.Narrator do
 
     👋 Game over!
     """,
-    game_keys: "😀 Your keyboard after {{moves_made}} round(s):",
+    game_keyboard: "😀 Your keyboard after {{moves_made}} round(s):",
     game_board: "😀 Your board after {{moves_made}} round(s):",
     make_guess: "🧐 Type your guess and press return: ",
     moves_remaining: "😀 You have {{moves_remaining}} guess(es) remaining.",
@@ -65,8 +65,8 @@ defmodule Pordle.CLI.Narrator do
   Narrates the given line and its arguments.
 
   """
-  def narrate(line, args \\ []) do
-    line = Keyword.get(@lines, line) <> "\n"
+  def print_line(line, args \\ []) do
+    line = Keyword.fetch!(@lines, line) <> "\n"
 
     Enum.reduce(args, line, fn {key, value}, acc ->
       String.replace(acc, "{{#{key}}}", highlight(value))
@@ -78,7 +78,7 @@ defmodule Pordle.CLI.Narrator do
   Accessor for `@lines`.
 
   """
-  def get_line(line), do: @lines[line]
+  def get_line(line), do: Keyword.fetch!(@lines, line)
 
   defp highlight(char) do
     CLI.Theme.color(:highlight) <> "#{char}" <> IO.ANSI.reset()

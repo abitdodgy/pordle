@@ -10,7 +10,7 @@ defmodule Pordle.CLI do
 
   """
   def main(argv) do
-    Narrator.narrate(:game_start)
+    Narrator.print_line(:game_start)
 
     {:ok, server} =
       argv
@@ -49,19 +49,19 @@ defmodule Pordle.CLI do
          board: board,
          moves_made: moves_made,
          moves_allowed: moves_allowed,
-         keys: keys,
+         keyboard: keyboard,
          result: result
        }) do
-    Narrator.narrate(:game_board, moves_made: moves_made)
+    Narrator.print_line(:game_board, moves_made: moves_made)
     print_board(board)
 
-    if not Enum.empty?(keys) do
-      Narrator.narrate(:game_keys, moves_made: moves_made)
-      print_keys(keys)
+    if not Enum.empty?(keyboard) do
+      Narrator.print_line(:game_keyboard, moves_made: moves_made)
+      print_keyboard(keyboard)
     end
 
     unless result,
-      do: Narrator.narrate(:moves_remaining, moves_remaining: moves_allowed - moves_made)
+      do: Narrator.print_line(:moves_remaining, moves_remaining: moves_allowed - moves_made)
   end
 
   defp receive_command(server) do
@@ -73,12 +73,12 @@ defmodule Pordle.CLI do
   end
 
   defp execute_command(":quit", server) do
-    Narrator.narrate(:quit)
+    Narrator.print_line(:quit)
     Process.exit(server, :normal)
   end
 
   defp execute_command(":help", server) do
-    Narrator.narrate(:help)
+    Narrator.print_line(:help)
     receive_command(server)
   end
 
@@ -94,9 +94,9 @@ defmodule Pordle.CLI do
     end)
   end
 
-  defp print_keys(keys) do
+  defp print_keyboard(keyboard) do
     tab()
-    Enum.each(keys, &draw_cell/1)
+    Enum.each(keyboard, &draw_cell/1)
     line()
   end
 
@@ -105,30 +105,30 @@ defmodule Pordle.CLI do
     |> GameServer.play_move(guess)
     |> case do
       {:ok, %Game{result: :won, moves_made: moves_made} = game} ->
-        Narrator.narrate(:player_move, move: guess)
+        Narrator.print_line(:player_move, move: guess)
         render_state(game)
-        Narrator.narrate(:game_won, moves_made: moves_made)
+        Narrator.print_line(:game_won, moves_made: moves_made)
 
       {:ok, %Game{result: :lost} = game} ->
-        Narrator.narrate(:player_move, move: guess)
+        Narrator.print_line(:player_move, move: guess)
         render_state(game)
-        Narrator.narrate(:game_lost)
+        Narrator.print_line(:game_lost)
 
       {:ok, state} ->
-        Narrator.narrate(:player_move, move: guess)
+        Narrator.print_line(:player_move, move: guess)
         render_state(state)
         receive_command(server)
 
       {:error, :invalid_move} ->
-        Narrator.narrate(:invalid_move, move: guess)
+        Narrator.print_line(:invalid_move, move: guess)
         receive_command(server)
 
       {:error, :word_not_found} ->
-        Narrator.narrate(:word_not_found, word: guess)
+        Narrator.print_line(:word_not_found, word: guess)
         receive_command(server)
 
       {:error, :game_over} ->
-        Narrator.narrate(:game_over)
+        Narrator.print_line(:game_over)
     end
   end
 
