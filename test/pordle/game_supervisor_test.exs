@@ -1,6 +1,8 @@
 defmodule Pordle.GameSupervisorTest do
   use ExUnit.Case, async: true
 
+  import Pordle.Test.Helpers, only: [get_name: 0]
+
   alias Pordle.{
     GameSupervisor,
     GameRegistry,
@@ -8,7 +10,7 @@ defmodule Pordle.GameSupervisorTest do
   }
 
   setup do
-    name = :rand.uniform(10000)
+    name = get_name()
 
     on_exit(fn ->
       [{server, _}] = Registry.lookup(GameRegistry, {GameServer, name})
@@ -21,7 +23,7 @@ defmodule Pordle.GameSupervisorTest do
   test "start_child/1 starts a new game server process", %{name: name} do
     assert [] = Registry.lookup(GameRegistry, {GameServer, name})
 
-    assert {:ok, server} = GameSupervisor.start_child(name: name)
+    assert {:ok, server} = GameSupervisor.start_child(name: name, puzzle: "foo")
     assert [{^server, nil}] = Registry.lookup(GameRegistry, {GameServer, name})
   end
 end

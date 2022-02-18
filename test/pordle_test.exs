@@ -1,27 +1,45 @@
 defmodule PordleTest do
   use ExUnit.Case
 
+  import Pordle.Test.Helpers, only: [get_name: 0]
+
   alias Pordle.{GameRegistry, GameServer, Game}
 
-  test "create_game/1 returns a game server" do
-    {:ok, server} = Pordle.create_game()
+  describe "create_game/1" do
+    setup do
+      {:ok, opts: [name: get_name(), puzzle: "crate"]}
+    end
 
-    assert Process.alive?(server)
+    test "create_game/1 returns a game server", %{opts: opts} do
+      {:ok, server} = Pordle.create_game(opts)
 
-    assert %Game{name: name} = :sys.get_state(server)
-    assert [{^server, nil}] = Registry.lookup(GameRegistry, {GameServer, name})
+      assert Process.alive?(server)
 
-    Process.exit(server, :normal)
+      assert %Game{name: name, puzzle: "crate"} = :sys.get_state(server)
+      assert [{^server, nil}] = Registry.lookup(GameRegistry, {GameServer, name})
+
+      Process.exit(server, :normal)
+    end
   end
 
-  test "create_game/1 starts a game server with a custom name" do
-    {:ok, server} = Pordle.create_game(name: "123")
+  describe "delegated functions" do
+    setup do
+      name = get_name()
 
-    assert Process.alive?(server)
+      {:ok, _pid} = Pordle.create_game(name: name, puzzle: "crate")
+      {:ok, name: name}
+    end
 
-    assert %Game{name: "123"} = :sys.get_state(server)
-    assert [{^server, nil}] = Registry.lookup(GameRegistry, {GameServer, "123"})
+    test "play_move/2", %{name: name} do
+      assert {:ok, %Game{}} = Pordle.play_move(name, "slate")
+    end
 
-    Process.exit(server, :normal)
+    test "get_state/1", %{name: name} do
+      assert {:ok, %Game{}} = Pordle.get_state(name)
+    end
+
+    test "exit/1", %{name: name} do
+      assert :ok = Pordle.exit(name)
+    end
   end
 end

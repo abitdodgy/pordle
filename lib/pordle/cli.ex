@@ -3,32 +3,31 @@ defmodule Pordle.CLI do
   Play Pordle using a Command Line Interface.
 
   """
-  alias Pordle.{GameServer, Game, CLI.Narrator}
+  import Pordle.CLI.Narrator, only: [print_line: 1, print_line: 2, print_state: 1, get_line: 1]
+
+  alias Pordle.Game
 
   @doc """
   Entry point for the game.
 
   """
   def main(argv) do
-    Narrator.print_line(:game_start)
+    print_line(:game_start)
 
-    {:ok, server} =
+    server = puid()
+
+    {:ok, _pid} =
       argv
       |> parse_args()
+      |> put_puzzle()
+      |> Keyword.put_new(:name, server)
       |> Pordle.create_game()
 
-    {:ok, state} = GameServer.get_state(server)
-    render_state(state)
+    {:ok, state} = Pordle.get_state(server)
 
+    print_state(state)
     receive_command(server)
   end
-
-  @doc """
-  Renders the given character with a formatted background.
-
-  """
-  def cell(char, state),
-    do: Pordle.CLI.Theme.color(state) <> " #{char} " <> IO.ANSI.reset() <> "\s"
 
   defp parse_args(args) do
     {options, _, _} =
@@ -45,40 +44,32 @@ defmodule Pordle.CLI do
     options
   end
 
-  defp render_state(%Game{
-         board: board,
-         moves_made: moves_made,
-         moves_allowed: moves_allowed,
-         keyboard: keyboard,
-         result: result
-       }) do
-    Narrator.print_line(:game_board, moves_made: moves_made)
-    print_board(board)
+  defp put_puzzle(opts) do
+    puzzle =
+      Keyword.get_lazy(opts, :puzzle, fn ->
+        opts
+        |> Keyword.get(:puzzle_size, config(:default_puzzle_size))
+        |> config(:dictionary).new()
+      end)
 
-    if not Enum.empty?(keyboard) do
-      Narrator.print_line(:game_keyboard, moves_made: moves_made)
-      print_keyboard(keyboard)
-    end
-
-    unless result,
-      do: Narrator.print_line(:moves_remaining, moves_remaining: moves_allowed - moves_made)
+    Keyword.put(opts, :puzzle, puzzle)
   end
 
   defp receive_command(server) do
     :make_guess
-    |> Narrator.get_line()
+    |> get_line()
     |> IO.gets()
     |> String.trim()
     |> execute_command(server)
   end
 
   defp execute_command(":quit", server) do
-    Narrator.print_line(:quit)
-    Process.exit(server, :normal)
+    print_line(:quit)
+    shutdown(server)
   end
 
   defp execute_command(":help", server) do
-    Narrator.print_line(:help)
+    print_line(:help)
     receive_command(server)
   end
 
@@ -86,60 +77,52 @@ defmodule Pordle.CLI do
     play_move(server, guess)
   end
 
-  defp print_board(board) do
-    Enum.each(board, fn row ->
-      tab()
-      Enum.each(row, &draw_cell/1)
-      line()
-    end)
-  end
-
-  defp print_keyboard(keyboard) do
-    tab()
-    Enum.each(keyboard, &draw_cell/1)
-    line()
-  end
-
   defp play_move(server, guess) do
     server
-    |> GameServer.play_move(guess)
+    |> Pordle.play_move(guess)
     |> case do
       {:ok, %Game{result: :won, moves_made: moves_made} = game} ->
-        Narrator.print_line(:player_move, move: guess)
-        render_state(game)
-        Narrator.print_line(:game_won, moves_made: moves_made)
+        print_line(:player_move, move: guess)
+        print_state(game)
+        print_line(:game_won, moves_made: moves_made)
+        shutdown(server)
 
       {:ok, %Game{result: :lost} = game} ->
-        Narrator.print_line(:player_move, move: guess)
-        render_state(game)
-        Narrator.print_line(:game_lost)
+        print_line(:player_move, move: guess)
+        print_state(game)
+        print_line(:game_lost)
+        shutdown(server)
 
       {:ok, state} ->
-        Narrator.print_line(:player_move, move: guess)
-        render_state(state)
+        print_line(:player_move, move: guess)
+        print_state(state)
         receive_command(server)
 
       {:error, :invalid_move} ->
-        Narrator.print_line(:invalid_move, move: guess)
+        print_line(:invalid_move, move: guess)
         receive_command(server)
 
       {:error, :word_not_found} ->
-        Narrator.print_line(:word_not_found, word: guess)
+        print_line(:word_not_found, word: guess)
         receive_command(server)
 
       {:error, :game_over} ->
-        Narrator.print_line(:game_over)
+        print_line(:game_over)
+        shutdown(server)
     end
   end
 
-  defp draw_cell({char, state}) do
-    char = if is_nil(char), do: "\s", else: String.upcase(char)
-
-    char
-    |> cell(state)
-    |> IO.write()
+  defp shutdown(server) do
+    Pordle.exit(server)
   end
 
-  defp tab(), do: IO.write("\t")
-  defp line(), do: IO.puts("\n")
+  defp config(key) do
+    Application.fetch_env!(:pordle, key)
+  end
+
+  defp puid(size \\ 15) do
+    size
+    |> :crypto.strong_rand_bytes()
+    |> Base.url_encode64(padding: false)
+  end
 end

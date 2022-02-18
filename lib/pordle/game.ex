@@ -1,6 +1,6 @@
 defmodule Pordle.Game do
   @moduledoc """
-  Pordle game server. For game logic, see `Pordle.Game`.
+  Contains logic and state for playing a Pordle game.
 
   """
   alias Pordle.Game
@@ -74,20 +74,6 @@ defmodule Pordle.Game do
     end
   end
 
-  @doc """
-  Returns whether the game is finished. The game is considered finished if `result` is not `nil`.
-
-  ## Examples
-
-      iex> finished?(%Game{result: :won})
-      true
-
-      iex> finished?(%Game{result: nil})
-      false
-
-  """
-  def finished?(%Game{result: result}), do: not is_nil(result)
-
   defp init_puzzle_size(%Game{puzzle: puzzle} = game) do
     Map.put(game, :puzzle_size, String.length(puzzle))
   end
@@ -98,7 +84,7 @@ defmodule Pordle.Game do
     if Enum.empty?(board) do
       size = 1..(moves_allowed * puzzle_size)
 
-      for(_row <- size, into: [], do: {nil, :empty})
+      for(_row <- size, into: [], do: {:empty, nil})
       |> Enum.chunk_every(puzzle_size)
       |> then(fn board ->
         Map.put(game, :board, board)
@@ -108,15 +94,20 @@ defmodule Pordle.Game do
     end
   end
 
-  defp validate_move(%Game{puzzle: puzzle}, move) do
+  defp validate_move(%Game{puzzle: puzzle} = game, move) do
     cond do
-      String.length(puzzle) == String.length(move) ->
-        {:ok, move}
+      String.length(puzzle) != String.length(move) ->
+        {:error, :invalid_move}
+
+      finished?(game) ->
+        {:error, :game_over}
 
       true ->
-        {:error, :invalid_move}
+        {:ok, move}
     end
   end
+
+  defp finished?(%Game{result: result}), do: not is_nil(result)
 
   defp put_moves(game, move) do
     game
@@ -152,8 +143,8 @@ defmodule Pordle.Game do
       game
       |> Map.get(:board)
       |> List.flatten()
-      |> Enum.reject(fn {char, _type} -> is_nil(char) end)
-      |> Enum.uniq_by(fn {char, _type} -> char end)
+      |> Enum.reject(fn {_type, char} -> is_nil(char) end)
+      |> Enum.uniq_by(fn {_type, char} -> char end)
 
     Map.put(game, :keyboard, keyboard)
   end
@@ -161,7 +152,7 @@ defmodule Pordle.Game do
   defp board_full?(board) do
     not (board
          |> List.flatten()
-         |> Enum.any?(fn {char, _type} ->
+         |> Enum.any?(fn {_type, char} ->
            is_nil(char)
          end))
   end
@@ -175,20 +166,20 @@ defmodule Pordle.Game do
     |> Enum.reduce([], fn {char, index}, acc ->
       cond do
         char == Enum.at(puzzle, index) ->
-          {char, :hit}
+          {:hit, char}
 
         char in puzzle and count_found(acc, char) < count_in_puzzle(puzzle, char) ->
-          {char, :nearly}
+          {:nearly, char}
 
         true ->
-          {char, :miss}
+          {:miss, char}
       end
       |> then(fn result -> acc ++ [result] end)
     end)
   end
 
   defp count_found(list, char) do
-    Enum.count(list, fn {i, _type} -> i == char end)
+    Enum.count(list, fn {_type, i} -> i == char end)
   end
 
   defp count_in_puzzle(puzzle, char) do

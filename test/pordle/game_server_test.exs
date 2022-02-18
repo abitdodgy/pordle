@@ -1,61 +1,57 @@
 defmodule Pordle.GameServerTest do
   use ExUnit.Case, async: true
 
+  import Pordle.Test.Helpers, only: [get_name: 0]
+
   alias Pordle.{GameServer, Game}
 
   describe "start_link/1" do
     setup do
-      opts = [name: Integer.to_string(:rand.uniform(10000))]
-      {:ok, opts: opts}
+      {:ok, name: get_name(), puzzle: "crate"}
     end
 
-    test "starts a new game server with the given name and default options", %{
-      opts: [name: name] = opts
+    test "starts a new game server with the given options", %{
+      name: name,
+      puzzle: puzzle
     } do
-      assert {:ok, server} = GameServer.start_link(opts)
+      assert {:ok, server} = GameServer.start_link(name: name, puzzle: puzzle)
 
       assert %Game{
                name: ^name,
-               puzzle: puzzle,
-               puzzle_size: puzzle_size,
+               puzzle: ^puzzle,
+               puzzle_size: 5,
                moves: [],
                moves_made: 0,
-               moves_allowed: 6
+               moves_allowed: 6,
+               board: [
+                 [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil],
+                 _,
+                 _,
+                 _,
+                 _,
+                 _
+               ],
+               keyboard: []
              } = :sys.get_state(server)
-
-      assert is_integer(puzzle_size)
-
-      assert String.length(name) > 0
-      assert String.length(puzzle) == puzzle_size
 
       Process.exit(server, :normal)
     end
 
-    test "accepts a custom `puzzle_size` and `moves_allowed` as options", %{opts: opts} do
-      assert {:ok, server} = GameServer.start_link(opts ++ [puzzle_size: 3, moves_allowed: 1])
+    test "accepts `moves_allowed` as an option", %{name: name, puzzle: puzzle} do
+      assert {:ok, server} = GameServer.start_link(name: name, puzzle: puzzle, moves_allowed: 1)
 
       assert %Game{
-               puzzle: puzzle,
-               puzzle_size: 3,
+               name: ^name,
+               puzzle: ^puzzle,
+               puzzle_size: 5,
+               moves: [],
+               moves_made: 0,
                moves_allowed: 1,
                board: [
-                 [
-                   nil: :empty,
-                   nil: :empty,
-                   nil: :empty
-                 ]
-               ]
+                 [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil]
+               ],
+               keyboard: []
              } = :sys.get_state(server)
-
-      assert String.length(puzzle) == 3
-
-      Process.exit(server, :normal)
-    end
-
-    test "ignores `puzzle_size` when a `puzzle` is provided", %{opts: opts} do
-      assert {:ok, server} = GameServer.start_link(opts ++ [puzzle: "amazing", puzzle_size: 3])
-
-      %Game{puzzle: "amazing", puzzle_size: 7} = :sys.get_state(server)
 
       Process.exit(server, :normal)
     end
@@ -63,94 +59,114 @@ defmodule Pordle.GameServerTest do
 
   describe "play_move/2" do
     setup do
-      {:ok, server} =
-        GameServer.start_link(name: :rand.uniform(10000), puzzle: "crate", moves_allowed: 1)
+      name = get_name()
+
+      {:ok, server} = GameServer.start_link(name: name, puzzle: "crate", moves_allowed: 2)
 
       on_exit(fn ->
         Process.exit(server, :normal)
       end)
 
-      {:ok, server: server}
+      {:ok, name: name, server: server}
     end
 
-    test "when move is valid updates server state", %{server: server} do
+    test "when move is valid updates server state", %{name: name, server: server} do
       assert_initial_state(server)
 
-      {:ok, %Game{} = state} = GameServer.play_move(server, "heart")
+      {:ok, %Game{} = state} = GameServer.play_move(name, "heart")
 
       assert %Game{
                moves: ["heart"],
                moves_made: 1,
                board: [
-                 [
-                   {"h", :miss},
-                   {"e", :nearly},
-                   {"a", :hit},
-                   {"r", :nearly},
-                   {"t", :nearly}
-                 ]
+                 [{:miss, "h"}, {:nearly, "e"}, {:hit, "a"}, {:nearly, "r"}, {:nearly, "t"}],
+                 _
                ],
-               keyboard: [{"h", :miss}, {"e", :nearly}, {"a", :hit}, {"r", :nearly}, {"t", :nearly}]
+               keyboard: [
+                 {:miss, "h"},
+                 {:nearly, "e"},
+                 {:hit, "a"},
+                 {:nearly, "r"},
+                 {:nearly, "t"}
+               ]
              } = state
     end
 
-    test "when move is not in dictionary", %{server: server} do
+    test "when move is a winning move", %{name: name, server: server} do
       assert_initial_state(server)
 
-      {:error, :word_not_found} = GameServer.play_move(server, "there")
+      {:ok, %Game{} = state} = GameServer.play_move(name, "crate")
+
+      assert %Game{
+               moves: ["crate"],
+               moves_made: 1,
+               result: :won,
+               board: [
+                 [{:hit, "c"}, {:hit, "r"}, {:hit, "a"}, {:hit, "t"}, {:hit, "e"}],
+                 _
+               ],
+               keyboard: [
+                 {:hit, "c"},
+                 {:hit, "r"},
+                 {:hit, "a"},
+                 {:hit, "t"},
+                 {:hit, "e"}
+               ]
+             } = state
     end
 
-    test "when move is not the correct length", %{server: server} do
+    test "when move is a losing move", %{name: name, server: server} do
       assert_initial_state(server)
 
-      {:error, :invalid_move} = GameServer.play_move(server, "foo")
-      {:error, :invalid_move} = GameServer.play_move(server, "foobar")
+      {:ok, %Game{} = _state} = GameServer.play_move(name, "slate")
+      {:ok, %Game{} = state} = GameServer.play_move(name, "slate")
+
+      assert %Game{
+               moves: ["slate", "slate"],
+               moves_made: 2,
+               result: :lost,
+               board: [
+                 [{:miss, "s"}, {:miss, "l"}, {:hit, "a"}, {:hit, "t"}, {:hit, "e"}],
+                 _
+               ],
+               keyboard: [
+                 {:miss, "s"},
+                 {:miss, "l"},
+                 {:hit, "a"},
+                 {:hit, "t"},
+                 {:hit, "e"}
+               ]
+             } = state
     end
 
-    test "sanitises input", %{server: server} do
+    test "when move is not in dictionary", %{name: name, server: server} do
       assert_initial_state(server)
 
-      {:ok, %Game{} = state} = GameServer.play_move(server, " SLatE ")
+      {:error, :word_not_found} = GameServer.play_move(name, "there")
+    end
+
+    test "when move is not the correct length", %{name: name, server: server} do
+      assert_initial_state(server)
+
+      {:error, :invalid_move} = GameServer.play_move(name, "foo")
+      {:error, :invalid_move} = GameServer.play_move(name, "foobar")
+
+      assert_initial_state(server)
+    end
+
+    test "sanitises input", %{name: name, server: server} do
+      assert_initial_state(server)
+
+      {:ok, %Game{} = state} = GameServer.play_move(name, " SLatE ")
 
       assert %Game{
                moves: ["slate"],
                board: [
-                 [
-                   {"s", :miss},
-                   {"l", :miss},
-                   {"a", :hit},
-                   {"t", :hit},
-                   {"e", :hit}
-                 ]
+                 [{:miss, "s"}, {:miss, "l"}, {:hit, "a"}, {:hit, "t"}, {:hit, "e"}],
+                 _
                ],
-               keyboard: [{"s", :miss}, {"l", :miss}, {"a", :hit}, {"t", :hit}, {"e", :hit}]
+               keyboard: [{:miss, "s"}, {:miss, "l"}, {:hit, "a"}, {:hit, "t"}, {:hit, "e"}]
              } = state
-    end
-  end
-
-  describe "play_move/2 process handling" do
-    setup do
-      {:ok, server} =
-        GameServer.start_link(name: :rand.uniform(10000), puzzle: "crate", moves_allowed: 2)
-
-      {:ok, server: server}
-    end
-
-    test "shuts down process when game is won", %{server: server} do
-      assert Process.alive?(server)
-
-      {:ok, _state} = GameServer.play_move(server, "crate")
-      refute Process.alive?(server)
-    end
-
-    test "shuts down process when game is lost", %{server: server} do
-      assert Process.alive?(server)
-
-      {:ok, _state} = GameServer.play_move(server, "slate")
-      assert Process.alive?(server)
-
-      {:ok, _state} = GameServer.play_move(server, "slate")
-      refute Process.alive?(server)
     end
   end
 
@@ -160,26 +176,40 @@ defmodule Pordle.GameServerTest do
              moves_made: 0,
              keyboard: [],
              board: [
-               [nil: :empty, nil: :empty, nil: :empty, nil: :empty, nil: :empty]
+               [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil],
+               _
              ]
            } = :sys.get_state(server)
   end
 
   describe "get_state/1" do
     setup do
-      {:ok, server} =
-        GameServer.start_link(name: :rand.uniform(10000), puzzle: "crate", moves_allowed: 1)
+      name = get_name()
+
+      {:ok, server} = GameServer.start_link(name: name, puzzle: "crate")
 
       on_exit(fn ->
         Process.exit(server, :normal)
       end)
 
-      {:ok, server: server}
+      {:ok, name: name, server: server}
     end
 
-    test "returns the state for the given server", %{server: server} do
-      {:ok, %Game{} = state} = GameServer.get_state(server)
+    test "returns the state for the given server", %{name: name, server: server} do
+      {:ok, %Game{} = state} = GameServer.get_state(name)
       assert ^state = :sys.get_state(server)
+    end
+  end
+
+  describe "exit/1" do
+    test "shuts down the process for the given server" do
+      name = get_name()
+      {:ok, server} = GameServer.start_link(name: name, puzzle: "crate")
+
+      assert Process.alive?(server)
+      assert :ok = GameServer.exit(name)
+
+      refute Process.alive?(server)
     end
   end
 end

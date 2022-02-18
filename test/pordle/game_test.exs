@@ -9,17 +9,18 @@ defmodule Pordle.GameTest do
     end
 
     test "builds a new game struct from the given opts" do
-      opts = [puzzle: "crate", moves_allowed: 2, name: "game"]
+      opts = [name: "game", puzzle: "crate", moves_allowed: 2]
 
       assert %Game{
+               name: "game",
                puzzle: "crate",
                puzzle_size: 5,
                moves: [],
                moves_made: 0,
                moves_allowed: 2,
                board: [
-                 [nil: :empty, nil: :empty, nil: :empty, nil: :empty, nil: :empty],
-                 [nil: :empty, nil: :empty, nil: :empty, nil: :empty, nil: :empty]
+                 [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil],
+                 [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil]
                ],
                keyboard: []
              } = Game.new(opts)
@@ -42,10 +43,16 @@ defmodule Pordle.GameTest do
                moves_made: 1,
                moves_allowed: 2,
                board: [
-                 [{"h", :miss}, {"e", :nearly}, {"a", :hit}, {"r", :nearly}, {"t", :nearly}],
+                 [{:miss, "h"}, {:nearly, "e"}, {:hit, "a"}, {:nearly, "r"}, {:nearly, "t"}],
                  _
                ],
-               keyboard: [{"h", :miss}, {"e", :nearly}, {"a", :hit}, {"r", :nearly}, {"t", :nearly}]
+               keyboard: [
+                 {:miss, "h"},
+                 {:nearly, "e"},
+                 {:hit, "a"},
+                 {:nearly, "r"},
+                 {:nearly, "t"}
+               ]
              } = game
     end
 
@@ -60,10 +67,10 @@ defmodule Pordle.GameTest do
                moves_made: 1,
                moves_allowed: 2,
                board: [
-                 [{"c", :hit}, {"r", :hit}, {"a", :hit}, {"t", :hit}, {"e", :hit}],
+                 [{:hit, "c"}, {:hit, "r"}, {:hit, "a"}, {:hit, "t"}, {:hit, "e"}],
                  _
                ],
-               keyboard: [{"c", :hit}, {"r", :hit}, {"a", :hit}, {"t", :hit}, {"e", :hit}]
+               keyboard: [{:hit, "c"}, {:hit, "r"}, {:hit, "a"}, {:hit, "t"}, {:hit, "e"}]
              } = game
     end
 
@@ -79,17 +86,17 @@ defmodule Pordle.GameTest do
                moves_made: 2,
                moves_allowed: 2,
                board: [
-                 [{"h", :miss}, {"e", :nearly}, {"a", :hit}, {"r", :nearly}, {"t", :nearly}],
-                 [{"s", :miss}, {"l", :miss}, {"a", :hit}, {"t", :hit}, {"e", :hit}]
+                 [{:miss, "h"}, {:nearly, "e"}, {:hit, "a"}, {:nearly, "r"}, {:nearly, "t"}],
+                 [{:miss, "s"}, {:miss, "l"}, {:hit, "a"}, {:hit, "t"}, {:hit, "e"}]
                ],
                keyboard: [
-                 {"h", :miss},
-                 {"e", :nearly},
-                 {"a", :hit},
-                 {"r", :nearly},
-                 {"t", :nearly},
-                 {"s", :miss},
-                 {"l", :miss}
+                 {:miss, "h"},
+                 {:nearly, "e"},
+                 {:hit, "a"},
+                 {:nearly, "r"},
+                 {:nearly, "t"},
+                 {:miss, "s"},
+                 {:miss, "l"}
                ]
              } = game
     end
@@ -108,7 +115,7 @@ defmodule Pordle.GameTest do
 
       assert %Game{
                board: [
-                 [{"l", :nearly}, {"l", :nearly}, {"l", :miss}, _, _],
+                 [{:nearly, "l"}, {:nearly, "l"}, {:miss, "l"}, _, _],
                  _,
                  _
                ]
@@ -131,22 +138,10 @@ defmodule Pordle.GameTest do
                moves_made: 0,
                keyboard: [],
                board: [
-                 [nil: :empty, nil: :empty, nil: :empty, nil: :empty, nil: :empty],
-                 [nil: :empty, nil: :empty, nil: :empty, nil: :empty, nil: :empty]
+                 [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil],
+                 [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil]
                ]
              } = game
-    end
-  end
-
-  describe "finished?/1" do
-    test "`false` when game `result` is nil" do
-      game = Game.new(name: "foo", puzzle: "foo", result: nil)
-      refute Game.finished?(game)
-    end
-
-    test "`true` when game `result` is not nil" do
-      game = Game.new(name: "foo", puzzle: "foo", result: :won)
-      assert Game.finished?(game)
     end
   end
 end

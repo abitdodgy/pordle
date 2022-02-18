@@ -16,4 +16,8 @@ defmodule Pordle.GameRegistry do
   def via_tuple(id) do
     {:via, Registry, {__MODULE__, id}}
   end
+
+  def lookup(name) do
+    Registry.lookup(__MODULE__, name)
+  end
 end

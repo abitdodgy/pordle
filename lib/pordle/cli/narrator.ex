@@ -1,9 +1,11 @@
 defmodule Pordle.CLI.Narrator do
   @moduledoc """
-  A helper module to narrate game play events to the CLI.
+  Contains functions to narrate gameplay events to the CLI.
 
   """
-  alias Pordle.CLI
+  alias Pordle.Game
+
+  @colour_theme Application.compile_env(:pordle, :cli)[:theme]
 
   @lines [
     game_start: ~s"""
@@ -80,7 +82,55 @@ defmodule Pordle.CLI.Narrator do
   """
   def get_line(line), do: Keyword.fetch!(@lines, line)
 
-  defp highlight(char) do
-    CLI.Theme.color(:highlight) <> "#{char}" <> IO.ANSI.reset()
+  @doc """
+  Prints the game state to the console.
+
+  """
+  def print_state(%Game{
+        board: board,
+        moves_made: moves_made,
+        moves_allowed: moves_allowed,
+        keyboard: keyboard,
+        result: result
+      }) do
+    print_line(:game_board, moves_made: moves_made)
+    print_board(board)
+
+    if not Enum.empty?(keyboard) do
+      print_line(:game_keyboard, moves_made: moves_made)
+      print_keyboard(keyboard)
+    end
+
+    unless result, do: print_line(:moves_remaining, moves_remaining: moves_allowed - moves_made)
   end
+
+  defp print_board(board) do
+    Enum.each(board, fn row ->
+      tab()
+      Enum.each(row, &draw_cell/1)
+      line()
+    end)
+  end
+
+  defp print_keyboard(keyboard) do
+    tab()
+    Enum.each(keyboard, &draw_cell/1)
+    line()
+  end
+
+  defp draw_cell({type, char}) do
+    char = if is_nil(char), do: "\s", else: String.upcase(char)
+
+    (color(type) <> " #{char} " <> IO.ANSI.reset() <> "\s")
+    |> IO.write()
+  end
+
+  defp highlight(char) do
+    color(:highlight) <> "#{char}" <> IO.ANSI.reset()
+  end
+
+  defp tab(), do: IO.write("\t")
+  defp line(), do: IO.puts("\n")
+
+  defp color(key), do: Keyword.fetch!(@colour_theme, key)
 end

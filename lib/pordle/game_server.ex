@@ -17,7 +17,7 @@ defmodule Pordle.GameServer do
 
   ## Options
 
-    - `name` A required game identifier that is used for the process registry.
+  See `Pordle.create_game/1` for a list of options.
 
   """
   def start_link(opts) do
@@ -31,64 +31,67 @@ defmodule Pordle.GameServer do
 
   @impl true
   def init(opts) do
-    puzzle =
-      Keyword.get_lazy(opts, :puzzle, fn ->
-        opts
-        |> Keyword.get(:puzzle_size, config(:default_puzzle_size))
-        |> config(:dictionary).new()
-      end)
-
-    game =
-      opts
-      |> Keyword.put(:puzzle, puzzle)
-      |> Game.new()
-
-    {:ok, game}
+    {:ok, Game.new(opts)}
   end
 
   @doc """
-  Returns the game struct for the given `server`.
+  Returns the game struct for the game with the given `name`.
 
   ## Examples
 
-      iex> get_state(server)
-      %Game{}
+      iex> get_state(name)
+      {:ok, %Game{}}
 
   """
-  def get_state(server) do
-    GenServer.call(server, :get_state)
+  def get_state(name) do
+    name
+    |> via_tuple()
+    |> GenServer.call(:get_state)
   end
 
   @doc """
-  Sends the player move for the given `server`.
+  Sends the player move to the game with the given `name`.
 
   ## Examples
 
-      iex> play_move(server, move)
-      {:ok, pid}
+      iex> play_move(name, move)
+      {:ok, %Game{}}
 
   """
-  def play_move(server, move) do
+  def play_move(name, move) do
     word = sanitize(move)
 
     cond do
       config(:dictionary).valid?(word) ->
-        GenServer.call(server, {:play_move, word})
+        name
+        |> via_tuple()
+        |> GenServer.call({:play_move, word})
 
       true ->
         {:error, :word_not_found}
     end
   end
 
+  @doc """
+  Shuts down the server process for the given `name`.
+
+  ## Examples
+
+      iex> exit(name)
+      :ok
+
+  """
+  def exit(name) do
+    name
+    |> via_tuple()
+    |> GenServer.cast(:exit)
+  end
+
   @impl true
   def handle_call({:play_move, move}, _from, state) do
     case Game.play_move(state, move) do
       {:ok, new_state} ->
-        if Game.finished?(new_state) do
-          {:stop, :normal, {:ok, new_state}, new_state}
-        else
-          {:reply, {:ok, new_state}, new_state}
-        end
+        {:reply, {:ok, new_state}, new_state}
 
       error ->
         {:reply, error, state}
@@ -98,6 +101,11 @@ defmodule Pordle.GameServer do
   @impl true
   def handle_call(:get_state, _from, state) do
     {:reply, {:ok, state}, state}
+  end
+
+  @impl true
+  def handle_cast(:exit, state) do
+    {:stop, :normal, state}
   end
 
   defp sanitize(string) do
