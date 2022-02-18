@@ -1,9 +1,5 @@
 defmodule Pordle.Test.Dictionary do
-  @moduledoc """
-  An implementation of `Pordle.Dictionary` behaviour for testing.
-
-  """
-  @behaviour Pordle.Dictionary
+  @moduledoc false
 
   @dictionary ~w[
     foo
@@ -17,14 +13,7 @@ defmodule Pordle.Test.Dictionary do
     bbblue
   ]
 
-  @impl true
-  def new(size) do
-    @dictionary
-    |> Enum.filter(&(String.length(&1) == size))
-    |> Enum.random()
-  end
-
-  @impl true
+  @doc false
   def valid?(entry) do
     Enum.member?(@dictionary, entry)
   end

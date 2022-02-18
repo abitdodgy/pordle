@@ -10,6 +10,5 @@ config :pordle,
       empty: IO.ANSI.color_background(4, 4, 4),
       highlight: IO.ANSI.light_red()
     ]
-  ]
-
-import_config "#{config_env()}.exs"
+  ],
+  validation: &Pordle.Test.Dictionary.valid?/1
