@@ -5,7 +5,7 @@ defmodule Pordle.GameTest do
 
   describe "new/1" do
     test "calculates `puzzle_size` from the given `puzzle`" do
-      assert %Game{puzzle: "crate", puzzle_size: 5} = Game.new(name: "game", puzzle: "crate")
+      assert %Game{puzzle: "crate"} = Game.new(name: "game", puzzle: "crate")
     end
 
     test "builds a new game struct from the given opts" do
@@ -14,7 +14,6 @@ defmodule Pordle.GameTest do
       assert %Game{
                name: "game",
                puzzle: "crate",
-               puzzle_size: 5,
                moves: [],
                moves_made: 0,
                moves_allowed: 2,

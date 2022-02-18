@@ -19,7 +19,6 @@ defmodule Pordle.GameServerTest do
       assert %Game{
                name: ^name,
                puzzle: ^puzzle,
-               puzzle_size: 5,
                moves: [],
                moves_made: 0,
                moves_allowed: 6,
@@ -43,7 +42,6 @@ defmodule Pordle.GameServerTest do
       assert %Game{
                name: ^name,
                puzzle: ^puzzle,
-               puzzle_size: 5,
                moves: [],
                moves_made: 0,
                moves_allowed: 1,

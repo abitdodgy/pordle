@@ -13,19 +13,17 @@ defmodule Pordle.Game do
   @type t() :: %__MODULE__{
           name: String.t(),
           puzzle: String.t(),
-          puzzle_size: non_neg_integer() | 5,
           moves: list(String.t()) | [],
           moves_allowed: non_neg_integer() | 6,
           moves_made: non_neg_integer() | 0,
-          result: atom() | :lost | :won,
-          board: list(),
-          keyboard: list()
+          result: atom() | :lost | :won | nil,
+          board: list([{atom(), String.t()}]) | [],
+          keyboard: list([{atom(), String.t()}]) | []
         }
 
   defstruct name: nil,
             puzzle: nil,
             result: nil,
-            puzzle_size: 5,
             moves: [],
             moves_allowed: 6,
             moves_made: 0,
@@ -37,62 +35,51 @@ defmodule Pordle.Game do
 
   ## Examples
 
-      iex> new([puzzle: "crate", puzzle_size: 5, ...])
+      iex> new(name: "foo", puzzle: "crate", moves_allowed: 6)
       %Game{puzzle: "crate", puzzle_size: 5, ...}
 
   """
   def new(opts) do
     __MODULE__
     |> struct!(opts)
-    |> init_puzzle_size()
     |> init_board()
   end
 
   @doc """
-  Adds the given `move` to the given game's `board` and updates the `moves_made` counter and `result`.
+  Adds the given `move` to the given game's `board` and updates the `keyboard`, `moves`, `moves_made` counter, and `result`.
 
   ## Examples
 
-      iex> play_move(%Game{board: [{nil, :empty}, ...], moves_made: 1}, "crate")
-      %Game{board: [{"c", :hit}, ...], moves_made: 2}
+      iex> play_move(%Game{board: [empty: nil], ...], moves: [], moves_made: 1}, "crate")
+      {:ok, %Game{board: [{:hit, "c"}, ...], moves: ["crate"], moves_made: 2, keyboard: [{:hit, "c"}, ...], result: nil}}
 
   """
   def play_move(game, move) do
     case validate_move(game, move) do
       {:ok, move} ->
-        game =
-          game
-          |> put_moves(move)
-          |> put_board(move)
-          |> put_result(move)
-          |> put_keyboard()
-
-        {:ok, game}
+        game
+        |> put_moves(move)
+        |> put_board(move)
+        |> put_result(move)
+        |> put_keyboard()
+        |> then(&{:ok, &1})
 
       error ->
         error
     end
   end
 
-  defp init_puzzle_size(%Game{puzzle: puzzle} = game) do
-    Map.put(game, :puzzle_size, String.length(puzzle))
-  end
+  defp init_board(%Game{board: [], puzzle: puzzle, moves_allowed: moves_allowed} = game) do
+    puzzle_size = String.length(puzzle)
 
-  defp init_board(
-         %Game{board: board, puzzle_size: puzzle_size, moves_allowed: moves_allowed} = game
-       ) do
-    if Enum.empty?(board) do
-      size = 1..(moves_allowed * puzzle_size)
-
-      for(_row <- size, into: [], do: {:empty, nil})
-      |> Enum.chunk_every(puzzle_size)
-      |> then(fn board ->
-        Map.put(game, :board, board)
-      end)
-    else
-      board
+    for _row <- 1..(moves_allowed * puzzle_size), into: [] do
+      {:empty, nil}
     end
+    |> Enum.chunk_every(puzzle_size)
+    |> then(&Map.put(game, :board, &1))
   end
+
+  defp init_board(game), do: game
 
   defp validate_move(%Game{puzzle: puzzle} = game, move) do
     cond do
@@ -123,20 +110,12 @@ defmodule Pordle.Game do
     end)
   end
 
-  defp put_result(%Game{board: board, puzzle: puzzle} = game, move) do
-    Map.update!(game, :result, fn result ->
-      cond do
-        puzzle == move ->
-          :won
+  defp put_result(%Game{puzzle: move} = game, move), do: Map.put(game, :result, :won)
 
-        board_full?(board) ->
-          :lost
+  defp put_result(%Game{moves_made: moves, moves_allowed: moves} = game, _),
+    do: Map.put(game, :result, :lost)
 
-        true ->
-          result
-      end
-    end)
-  end
+  defp put_result(game, _), do: game
 
   defp put_keyboard(game) do
     keyboard =
@@ -149,33 +128,24 @@ defmodule Pordle.Game do
     Map.put(game, :keyboard, keyboard)
   end
 
-  defp board_full?(board) do
-    not (board
-         |> List.flatten()
-         |> Enum.any?(fn {_type, char} ->
-           is_nil(char)
-         end))
-  end
-
   defp parse_move(puzzle, answer) do
     puzzle = to_list(puzzle)
     answer = to_list(answer)
 
-    answer
-    |> Enum.with_index()
-    |> Enum.reduce([], fn {char, index}, acc ->
-      cond do
-        char == Enum.at(puzzle, index) ->
-          {:hit, char}
+    for {char, index} <- Enum.with_index(answer), reduce: [] do
+      acc ->
+        cond do
+          char == Enum.at(puzzle, index) ->
+            {:hit, char}
 
-        char in puzzle and count_found(acc, char) < count_in_puzzle(puzzle, char) ->
-          {:nearly, char}
+          char in puzzle and count_found(acc, char) < count_in_puzzle(puzzle, char) ->
+            {:nearly, char}
 
-        true ->
-          {:miss, char}
-      end
-      |> then(fn result -> acc ++ [result] end)
-    end)
+          true ->
+            {:miss, char}
+        end
+        |> then(&(acc ++ [&1]))
+    end
   end
 
   defp count_found(list, char) do
