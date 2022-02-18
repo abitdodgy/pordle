@@ -62,7 +62,7 @@ defmodule Pordle.GameServer do
     word = sanitize(move)
 
     cond do
-      config(:validation).(word) ->
+      config(:validate_with).(word) ->
         name
         |> via_tuple()
         |> GenServer.call({:play_move, word})

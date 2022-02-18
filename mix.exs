@@ -6,7 +6,6 @@ defmodule Pordle.MixProject do
       app: :pordle,
       version: "0.1.0",
       elixir: "~> 1.13",
-      escript: escript_config(),
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps()
@@ -16,7 +15,7 @@ defmodule Pordle.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :crypto],
+      extra_applications: [:logger],
       mod: {Pordle.Application, []}
     ]
   end
@@ -28,10 +27,6 @@ defmodule Pordle.MixProject do
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
       # {:crypto_rand, "~> 1.0"}
     ]
-  end
-
-  defp escript_config do
-    [main_module: Pordle.CLI]
   end
 
   def elixirc_paths(:prod), do: ["lib"]
