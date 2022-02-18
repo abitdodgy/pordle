@@ -31,7 +31,7 @@ defmodule Pordle.Game do
             keyboard: []
 
   @doc """
-  Returns a new game struct with the given values. Generates a `board` if one isn't passed in.
+  Returns a new game struct with the given options. Generates a `board` if one isn't passed in.
 
   ## Examples
 
@@ -40,8 +40,8 @@ defmodule Pordle.Game do
 
   """
   def new(opts) do
-    __MODULE__
-    |> struct!(opts)
+    Game
+    |> struct(opts)
     |> init_board()
   end
 
