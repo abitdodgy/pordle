@@ -1,5 +1,5 @@
 defmodule Pordle.GameRegistryTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
 
   test "via_tuple/1 returns a via tuple for the given game `id`" do
     via_tuple = Pordle.GameRegistry.via_tuple("game id")

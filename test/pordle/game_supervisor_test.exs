@@ -1,5 +1,5 @@
 defmodule Pordle.GameSupervisorTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
 
   import Pordle.Test.Helpers, only: [get_name: 0]
 
