@@ -108,27 +108,32 @@ defmodule Pordle.GameTest do
     end
 
     test "evaluates double letters correctly" do
-      game = Game.new(name: "foo", puzzle: "small", moves_allowed: 3)
+      game = Game.new(name: "game", puzzle: "tarty", moves_allowed: 9)
 
-      {:ok, %Game{} = game} = Game.play_move(game, "lllma")
+      {:ok, %Game{} = game} = Game.play_move(game, "tarot")
+      {:ok, %Game{} = game} = Game.play_move(game, "tatts")
+      {:ok, %Game{} = game} = Game.play_move(game, "stott")
+      {:ok, %Game{} = game} = Game.play_move(game, "sttty")
+      {:ok, %Game{} = game} = Game.play_move(game, "stttt")
+      {:ok, %Game{} = game} = Game.play_move(game, "tstft")
+      {:ok, %Game{} = game} = Game.play_move(game, "tsttf")
+      {:ok, %Game{} = game} = Game.play_move(game, "ttttf")
+      {:ok, %Game{} = game} = Game.play_move(game, "tarty")
 
       assert %Game{
                board: [
-                 [{:nearly, "l"}, {:nearly, "l"}, {:miss, "l"}, _, _],
-                 _,
-                 _
+                 [{:hit, "t"}, {:hit, "a"}, {:hit, "r"}, {:miss, "o"}, {:nearly, "t"}],
+                 [{:hit, "t"}, {:hit, "a"}, {:miss, "t"}, {:hit, "t"}, {:miss, "s"}],
+                 [{:miss, "s"}, {:nearly, "t"}, {:miss, "o"}, {:hit, "t"}, {:miss, "t"}],
+                 [{:miss, "s"}, {:nearly, "t"}, {:miss, "t"}, {:hit, "t"}, {:hit, "y"}],
+                 [{:miss, "s"}, {:nearly, "t"}, {:miss, "t"}, {:hit, "t"}, {:miss, "t"}],
+                 [{:hit, "t"}, {:miss, "s"}, {:nearly, "t"}, {:miss, "f"}, {:miss, "t"}],
+                 [{:hit, "t"}, {:miss, "s"}, {:miss, "t"}, {:hit, "t"}, {:miss, "f"}],
+                 [{:hit, "t"}, {:miss, "t"}, {:miss, "t"}, {:hit, "t"}, {:miss, "f"}],
+                 [{:hit, "t"}, {:hit, "a"}, {:hit, "r"}, {:hit, "t"}, {:hit, "y"}]
                ]
              } = game
 
-      # TODO: Add other scenarios.
-      #
-      # {:ok, %Game{} = game} = Game.play_move(game, "lllma")
-      # assert %Game{
-      #          board: [
-      #            [{"l", :nearly}, {"l", :nearly}, {"l", :miss}, _, _], _, _
-      #          ]
-      #        } = game
-      #
     end
 
     defp assert_initial_state(game) do

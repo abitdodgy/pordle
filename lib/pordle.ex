@@ -30,6 +30,23 @@ defmodule Pordle do
 
   """
   def create_game(opts) do
-    GameSupervisor.start_child(opts)
+    {name, opts} =
+      Keyword.get_and_update(opts, :name, fn current_value ->
+        current_value =
+          if is_nil(current_value) do
+            puid()
+          end
+
+        {current_value, current_value}
+      end)
+
+    {:ok, pid} = GameSupervisor.start_child(opts)
+    {:ok, pid, name}
+  end
+
+  defp puid(size \\ 16) do
+    size
+    |> :crypto.strong_rand_bytes()
+    |> Base.url_encode64(padding: false)
   end
 end

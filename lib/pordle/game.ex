@@ -136,20 +136,30 @@ defmodule Pordle.Game do
       acc ->
         cond do
           char == Enum.at(puzzle, index) ->
-            {:hit, char}
+            acc ++ [hit: char]
 
-          char in puzzle and count_found(acc, char) < count_in_puzzle(puzzle, char) ->
-            {:nearly, char}
+          char in puzzle and (count_found(acc, char) + count_hits_ahead(answer, puzzle, char, index)) < count_in_puzzle(puzzle, char) ->
+            acc ++ [nearly: char]
 
           true ->
-            {:miss, char}
+            acc ++ [miss: char]
         end
-        |> then(&(acc ++ [&1]))
     end
   end
 
   defp count_found(list, char) do
     Enum.count(list, fn {_type, i} -> i == char end)
+  end
+
+  defp count_hits_ahead(answer, puzzle, char, index) do
+    answer_rest = Enum.slice(answer, (index + 1)..-1)
+    puzzle_rest = Enum.slice(puzzle, (index + 1)..-1)
+
+    answer_rest
+    |> Enum.with_index()
+    |> Enum.count(fn {current, i} ->
+      char == current && current == Enum.at(puzzle_rest, i)
+    end)
   end
 
   defp count_in_puzzle(puzzle, char) do

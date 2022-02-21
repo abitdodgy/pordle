@@ -1,32 +1,22 @@
 defmodule PordleTest do
   use ExUnit.Case
 
-  import Pordle.Test.Helpers, only: [get_name: 0]
-
-  alias Pordle.{GameRegistry, GameServer, Game}
+  alias Pordle.Game
 
   describe "create_game/1" do
-    setup do
-      {:ok, opts: [name: get_name(), puzzle: "crate"]}
-    end
+    test "returns a game server and a name" do
+      {:ok, pid, name} = Pordle.create_game(puzzle: "crate")
 
-    test "create_game/1 returns a game server", %{opts: opts} do
-      {:ok, server} = Pordle.create_game(opts)
+      assert Process.alive?(pid)
 
-      assert Process.alive?(server)
-
-      assert %Game{name: name, puzzle: "crate"} = :sys.get_state(server)
-      assert [{^server, nil}] = Registry.lookup(GameRegistry, {GameServer, name})
-
-      Process.exit(server, :normal)
+      assert %Game{name: ^name, puzzle: "crate"} = :sys.get_state(pid)
+      assert [{^pid, nil}] = Registry.lookup(Pordle.GameRegistry, {Pordle.GameServer, name})
     end
   end
 
   describe "delegated functions" do
     setup do
-      name = get_name()
-
-      {:ok, _pid} = Pordle.create_game(name: name, puzzle: "crate")
+      {:ok, _pid, name} = Pordle.create_game(puzzle: "crate")
       {:ok, name: name}
     end
 

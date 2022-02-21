@@ -1,20 +1,18 @@
 defmodule Pordle.GameServerTest do
   use ExUnit.Case
 
-  import Pordle.Test.Helpers, only: [get_name: 0]
-
   alias Pordle.{GameServer, Game}
 
   describe "start_link/1" do
     setup do
-      {:ok, name: get_name(), puzzle: "crate"}
+      {:ok, name: "game", puzzle: "crate"}
     end
 
     test "starts a new game server with the given options", %{
       name: name,
       puzzle: puzzle
     } do
-      assert {:ok, server} = GameServer.start_link(name: name, puzzle: puzzle)
+      assert {:ok, pid} = GameServer.start_link(name: name, puzzle: puzzle)
 
       assert %Game{
                name: ^name,
@@ -31,13 +29,11 @@ defmodule Pordle.GameServerTest do
                  _
                ],
                keyboard: []
-             } = :sys.get_state(server)
-
-      Process.exit(server, :normal)
+             } = :sys.get_state(pid)
     end
 
     test "accepts `moves_allowed` as an option", %{name: name, puzzle: puzzle} do
-      assert {:ok, server} = GameServer.start_link(name: name, puzzle: puzzle, moves_allowed: 1)
+      assert {:ok, pid} = GameServer.start_link(name: name, puzzle: puzzle, moves_allowed: 1)
 
       assert %Game{
                name: ^name,
@@ -49,27 +45,18 @@ defmodule Pordle.GameServerTest do
                  [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil]
                ],
                keyboard: []
-             } = :sys.get_state(server)
-
-      Process.exit(server, :normal)
+             } = :sys.get_state(pid)
     end
   end
 
   describe "play_move/2" do
     setup do
-      name = get_name()
-
-      {:ok, server} = GameServer.start_link(name: name, puzzle: "crate", moves_allowed: 2)
-
-      on_exit(fn ->
-        Process.exit(server, :normal)
-      end)
-
-      {:ok, name: name, server: server}
+      {:ok, pid} = GameServer.start_link(name: "game", puzzle: "crate", moves_allowed: 2)
+      {:ok, name: "game", pid: pid}
     end
 
-    test "when move is valid updates server state", %{name: name, server: server} do
-      assert_initial_state(server)
+    test "when move is valid updates server state", %{name: name, pid: pid} do
+      assert_initial_state(pid)
 
       {:ok, %Game{} = state} = GameServer.play_move(name, "heart")
 
@@ -90,8 +77,8 @@ defmodule Pordle.GameServerTest do
              } = state
     end
 
-    test "when move is a winning move", %{name: name, server: server} do
-      assert_initial_state(server)
+    test "when move is a winning move", %{name: name, pid: pid} do
+      assert_initial_state(pid)
 
       {:ok, %Game{} = state} = GameServer.play_move(name, "crate")
 
@@ -113,8 +100,8 @@ defmodule Pordle.GameServerTest do
              } = state
     end
 
-    test "when move is a losing move", %{name: name, server: server} do
-      assert_initial_state(server)
+    test "when move is a losing move", %{name: name, pid: pid} do
+      assert_initial_state(pid)
 
       {:ok, %Game{} = _state} = GameServer.play_move(name, "slate")
       {:ok, %Game{} = state} = GameServer.play_move(name, "slate")
@@ -137,23 +124,23 @@ defmodule Pordle.GameServerTest do
              } = state
     end
 
-    test "when move is not in dictionary", %{name: name, server: server} do
-      assert_initial_state(server)
+    test "when move is not in dictionary", %{name: name, pid: pid} do
+      assert_initial_state(pid)
 
       {:error, :word_not_found} = GameServer.play_move(name, "there")
     end
 
-    test "when move is not the correct length", %{name: name, server: server} do
-      assert_initial_state(server)
+    test "when move is not the correct length", %{name: name, pid: pid} do
+      assert_initial_state(pid)
 
       {:error, :invalid_move} = GameServer.play_move(name, "foo")
       {:error, :invalid_move} = GameServer.play_move(name, "foobar")
 
-      assert_initial_state(server)
+      assert_initial_state(pid)
     end
 
-    test "sanitises input", %{name: name, server: server} do
-      assert_initial_state(server)
+    test "sanitises input", %{name: name, pid: pid} do
+      assert_initial_state(pid)
 
       {:ok, %Game{} = state} = GameServer.play_move(name, " SLatE ")
 
@@ -168,7 +155,7 @@ defmodule Pordle.GameServerTest do
     end
   end
 
-  defp assert_initial_state(server) do
+  defp assert_initial_state(pid) do
     assert %Game{
              moves: [],
              moves_made: 0,
@@ -177,43 +164,36 @@ defmodule Pordle.GameServerTest do
                [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil],
                _
              ]
-           } = :sys.get_state(server)
+           } = :sys.get_state(pid)
   end
 
   describe "get_state/1" do
     setup do
-      name = get_name()
-
-      {:ok, server} = GameServer.start_link(name: name, puzzle: "crate")
-
-      on_exit(fn ->
-        Process.exit(server, :normal)
-      end)
-
-      {:ok, name: name, server: server}
+      {:ok, pid} = GameServer.start_link(name: "game", puzzle: "crate")
+      {:ok, name: "game", pid: pid}
     end
 
-    test "returns the state for the given server", %{name: name, server: server} do
+    test "returns the state for the given server", %{name: name, pid: pid} do
       {:ok, %Game{} = state} = GameServer.get_state(name)
-      assert ^state = :sys.get_state(server)
+      assert ^state = :sys.get_state(pid)
     end
   end
 
   describe "exit/1" do
     test "shuts down the process for the given server" do
-      name = get_name()
-      {:ok, pid} = Pordle.create_game(name: name, puzzle: "crate")
+      {:ok, pid} = GameServer.start_link(name: "game", puzzle: "crate")
 
       assert Process.alive?(pid)
-      assert :ok = GameServer.exit(name)
+      assert :ok = GameServer.exit("game")
 
       # TODO
       # 
-      # This assertion will fail because `Process.alive?(pid)` returns before `GameServer.exit(name)` terminates the process.
+      # Without `Process.sleep` this assertion will fail since `Process.alive?/1` returns
+      # before GenServer has shutdown.
       # 
-      # The assertion can pass with `:timer.sleep(300)`, but this slows down the tests.
-      # 
-      # refute Process.alive?(pid)
+      # Find a better way to test this.
+      Process.sleep 50
+      refute Process.alive?(pid)
     end
   end
 end
