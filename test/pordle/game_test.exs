@@ -133,7 +133,6 @@ defmodule Pordle.GameTest do
                  [{:hit, "t"}, {:hit, "a"}, {:hit, "r"}, {:hit, "t"}, {:hit, "y"}]
                ]
              } = game
-
     end
 
     defp assert_initial_state(game) do

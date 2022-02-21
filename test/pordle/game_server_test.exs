@@ -192,7 +192,7 @@ defmodule Pordle.GameServerTest do
       # before GenServer has shutdown.
       # 
       # Find a better way to test this.
-      Process.sleep 50
+      Process.sleep(50)
       refute Process.alive?(pid)
     end
   end

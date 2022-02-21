@@ -138,7 +138,9 @@ defmodule Pordle.Game do
           char == Enum.at(puzzle, index) ->
             acc ++ [hit: char]
 
-          char in puzzle and (count_found(acc, char) + count_hits_ahead(answer, puzzle, char, index)) < count_in_puzzle(puzzle, char) ->
+          char in puzzle and
+              count_found(acc, char) + count_hits_ahead(answer, puzzle, char, index) <
+                count_in_puzzle(puzzle, char) ->
             acc ++ [nearly: char]
 
           true ->
