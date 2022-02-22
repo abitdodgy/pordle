@@ -53,7 +53,7 @@ defmodule Pordle.Game do
   ## Examples
 
       iex> play_move(%Game{board: [empty: nil], ...], moves: [], moves_made: 1}, "crate")
-      {:ok, %Game{board: [{:hit, "c"}, ...], moves: ["crate"], moves_made: 2, keyboard: [{:hit, "c"}, ...], result: nil}}
+      {:ok, %Game{board: [[{:hit, "c"}, ...]], moves: ["crate"], moves_made: 2, keyboard: %{"c" => :hit}, ...], result: nil}}
 
   """
   def play_move(game, move) do
@@ -69,6 +69,40 @@ defmodule Pordle.Game do
       error ->
         error
     end
+  end
+
+  def add_char(%Game{board: board, moves_made: moves_made, puzzle: puzzle} = game, char) do
+    puzzle_size = String.length(puzzle)
+
+    row =
+      board
+      |> Enum.at(moves_made)
+      |> List.keystore(:empty, 0, {:full, char})
+      |> Enum.take(puzzle_size)
+
+    game = Map.update!(game, :board, fn board ->
+      List.replace_at(board, moves_made, row)
+    end)
+
+    {:ok, game}
+  end
+
+  def del_char(%Game{board: board, moves_made: moves_made, puzzle: puzzle} = game) do
+    puzzle_size = String.length(puzzle)
+
+    row =
+      board
+      |> Enum.at(moves_made)
+      |> Enum.reverse()
+      |> List.keystore(:full, 0, {:empty, nil})
+      |> Enum.reverse()
+      |> Enum.take(puzzle_size)
+
+    game = Map.update!(game, :board, fn board ->
+      List.replace_at(board, moves_made, row)
+    end)
+
+    {:ok, game}
   end
 
   defp init_board(%Game{board: [], puzzle: puzzle, moves_allowed: moves_allowed} = game) do

@@ -6,6 +6,8 @@ defmodule Pordle do
   alias Pordle.{GameSupervisor, GameServer}
 
   defdelegate play_move(name, move), to: GameServer
+  defdelegate add_char(name, char), to: GameServer
+  defdelegate del_char(name), to: GameServer
   defdelegate get_state(name), to: GameServer
   defdelegate exit(name), to: GameServer
 

@@ -79,6 +79,20 @@ defmodule Pordle.GameServer do
     end
   end
 
+  def add_char(name, char) do
+    char = sanitize(char)
+
+    name
+    |> via_tuple()
+    |> GenServer.call({:add_char, char})
+  end
+
+  def del_char(name) do
+    name
+    |> via_tuple()
+    |> GenServer.call(:del_char)
+  end
+
   @doc """
   Shuts down the server process for the given `name`.
 
@@ -97,6 +111,28 @@ defmodule Pordle.GameServer do
   @impl true
   def handle_call({:play_move, move}, _from, state) do
     case Game.play_move(state, move) do
+      {:ok, new_state} ->
+        {:reply, {:ok, new_state}, new_state}
+
+      error ->
+        {:reply, error, state}
+    end
+  end
+
+  @impl true
+  def handle_call({:add_char, char}, _from, state) do
+    case Game.add_char(state, char) do
+      {:ok, new_state} ->
+        {:reply, {:ok, new_state}, new_state}
+
+      error ->
+        {:reply, error, state}
+    end
+  end
+
+  @impl true
+  def handle_call(:del_char, _from, state) do
+    case Game.del_char(state) do
       {:ok, new_state} ->
         {:reply, {:ok, new_state}, new_state}
 
