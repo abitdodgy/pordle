@@ -1,4 +1,5 @@
 import Config
 
 config :pordle,
-  validate_with: &Pordle.Test.Dictionary.valid?/1
+  default_puzzle_size: 5,
+  dictionary: Pordle.Test.Dictionary

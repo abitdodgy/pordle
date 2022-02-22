@@ -7,6 +7,8 @@ defmodule Pordle.Game do
 
   @enforce_keys [:name, :puzzle]
 
+  @derive Jason.Encoder
+
   @typedoc """
   A Pordle game type, e.g. `%Game{}`.
   """
@@ -18,7 +20,7 @@ defmodule Pordle.Game do
           moves_made: non_neg_integer() | 0,
           result: atom() | :lost | :won | nil,
           board: list([{atom(), String.t()}]) | [],
-          keyboard: list([{atom(), String.t()}]) | []
+          keyboard: Map.t() | %{}
         }
 
   defstruct name: nil,
@@ -28,7 +30,7 @@ defmodule Pordle.Game do
             moves_allowed: 6,
             moves_made: 0,
             board: [],
-            keyboard: []
+            keyboard: %{}
 
   @doc """
   Returns a new game struct with the given options. Generates a `board` if one isn't passed in.
@@ -123,7 +125,11 @@ defmodule Pordle.Game do
       |> Map.get(:board)
       |> List.flatten()
       |> Enum.reject(fn {_type, char} -> is_nil(char) end)
-      |> Enum.uniq_by(fn {_type, char} -> char end)
+      |> Enum.reduce(%{}, fn {type, char}, acc ->
+        Map.update(acc, char, type, fn existing_value ->
+          if existing_value == :hit, do: existing_value, else: type
+        end)
+      end)
 
     Map.put(game, :keyboard, keyboard)
   end

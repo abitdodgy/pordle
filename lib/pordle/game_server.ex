@@ -31,6 +31,13 @@ defmodule Pordle.GameServer do
 
   @impl true
   def init(opts) do
+    opts =
+      Keyword.put_new_lazy(opts, :puzzle, fn ->
+        opts
+        |> Keyword.get(:puzzle_size, config(:default_puzzle_size))
+        |> config(:dictionary).new()
+      end)
+
     {:ok, Game.new(opts)}
   end
 
@@ -62,7 +69,7 @@ defmodule Pordle.GameServer do
     word = sanitize(move)
 
     cond do
-      config(:validate_with).(word) ->
+      config(:dictionary).valid?(word) ->
         name
         |> via_tuple()
         |> GenServer.call({:play_move, word})

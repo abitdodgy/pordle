@@ -21,7 +21,7 @@ defmodule Pordle.GameTest do
                  [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil],
                  [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil]
                ],
-               keyboard: []
+               keyboard: %{}
              } = Game.new(opts)
     end
   end
@@ -45,13 +45,13 @@ defmodule Pordle.GameTest do
                  [{:miss, "h"}, {:nearly, "e"}, {:hit, "a"}, {:nearly, "r"}, {:nearly, "t"}],
                  _
                ],
-               keyboard: [
-                 {:miss, "h"},
-                 {:nearly, "e"},
-                 {:hit, "a"},
-                 {:nearly, "r"},
-                 {:nearly, "t"}
-               ]
+               keyboard: %{
+                 "h" => :miss,
+                 "e" => :nearly,
+                 "a" => :hit,
+                 "r" => :nearly,
+                 "t" => :nearly
+               }
              } = game
     end
 
@@ -69,7 +69,7 @@ defmodule Pordle.GameTest do
                  [{:hit, "c"}, {:hit, "r"}, {:hit, "a"}, {:hit, "t"}, {:hit, "e"}],
                  _
                ],
-               keyboard: [{:hit, "c"}, {:hit, "r"}, {:hit, "a"}, {:hit, "t"}, {:hit, "e"}]
+               keyboard: %{"c" => :hit, "r" => :hit, "a" => :hit, "t" => :hit, "e" => :hit}
              } = game
     end
 
@@ -88,15 +88,15 @@ defmodule Pordle.GameTest do
                  [{:miss, "h"}, {:nearly, "e"}, {:hit, "a"}, {:nearly, "r"}, {:nearly, "t"}],
                  [{:miss, "s"}, {:miss, "l"}, {:hit, "a"}, {:hit, "t"}, {:hit, "e"}]
                ],
-               keyboard: [
-                 {:miss, "h"},
-                 {:nearly, "e"},
-                 {:hit, "a"},
-                 {:nearly, "r"},
-                 {:nearly, "t"},
-                 {:miss, "s"},
-                 {:miss, "l"}
-               ]
+               keyboard: %{
+                 "h" => :miss,
+                 "e" => :hit,
+                 "a" => :hit,
+                 "r" => :nearly,
+                 "t" => :hit,
+                 "s" => :miss,
+                 "l" => :miss
+               }
              } = game
     end
 
@@ -139,7 +139,7 @@ defmodule Pordle.GameTest do
       assert %Game{
                moves: [],
                moves_made: 0,
-               keyboard: [],
+               keyboard: %{},
                board: [
                  [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil],
                  [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil]

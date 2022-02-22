@@ -12,6 +12,9 @@ defmodule Pordle do
   @doc """
   Creates a new supervised game server with the given options.
 
+  If a game `name` or `puzzle` are not given, Pordle will automatically generate ones.
+  A puzzle is generated using a `Pordle.Dictionary` implementation.
+
   Set the number of moves (guesses) a player can make with the `moves_allowed` option.
 
   ## Examples
@@ -24,12 +27,12 @@ defmodule Pordle do
 
   ## Options
 
-    - `name` A process identifier that is stored in the Registry.
+    - `name` A process identifier that is stored in the Registry. Automatically generated unless provided.
     - `puzzle` A puzzle to solve.
     - `moves_allowed` The maximum number of guesses the player can make before the game ends. Defaults to `6`.
 
   """
-  def create_game(opts) do
+  def create_game(opts \\ []) do
     {name, opts} =
       Keyword.get_and_update(opts, :name, fn current_value ->
         current_value =
