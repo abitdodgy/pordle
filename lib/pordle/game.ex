@@ -51,11 +51,22 @@ defmodule Pordle.Game do
 
   ## Examples
 
-      iex> play_move(%Game{board: [full: "a", full: "t",]], moves_made: 0, puzzle: "at"})
-      {:ok, %Game{board: [[{:hit, "a"}, {:hit, "t"},]], moves_made: 1, keyboard: %{"a" => :hit, "t" => :hit}], result: won}}
+      iex> play_move(%Game{board: [full: "a", full: "t"]], moves_made: 0, puzzle: "at"})
+      {:ok,
+       %Game{
+         board: [[hit: "a", hit: "t"]],
+         keyboard: %{"a" => :hit, "t" => :hit},
+         moves_made: 1
+       }}
 
-      iex> play_move(%Game{board: [full: "u", full: "t",]], moves_made: 0, puzzle: "at"})
-      {:ok, %Game{board: [[{:miss, "u"}, {:hit, "t"},]], moves_made: 1, keyboard: %{"u" => :miss, "t" => :hit}], result: nil}}
+
+      iex> play_move(%Game{board: [full: "u", full: "t"]], moves_made: 0, puzzle: "at"})
+      {:ok,
+       %Game{
+         board: [[miss: "u", hit: "t"]],
+         keyboard: %{"u" => :miss, "t" => :hit},
+         moves_made: 1
+       }}
 
   """
   def play_move(%Game{board: board, moves_made: moves_made} = game) do

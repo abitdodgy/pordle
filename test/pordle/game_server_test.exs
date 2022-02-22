@@ -43,18 +43,19 @@ defmodule Pordle.GameServerTest do
   describe "play_move/2" do
     setup do
       {:ok, pid} = GameServer.start_link(name: "game", puzzle: "crate", moves_allowed: 2)
+
+      assert_initial_state(pid)
+
       {:ok, name: "game", pid: pid}
     end
 
-    test "when move is valid updates server state", %{name: name, pid: pid} do
-      assert_initial_state(pid)
-
+    test "when move is valid updates server state", %{name: name} do
       {:ok, %Game{} = state} = play_move(name, "heart")
 
       assert %Game{
                moves_made: 1,
                board: [
-                 [{:miss, "h"}, {:nearly, "e"}, {:hit, "a"}, {:nearly, "r"}, {:nearly, "t"}],
+                 [miss: "h", nearly: "e", hit: "a", nearly: "r", nearly: "t"],
                  _
                ],
                keyboard: %{
@@ -67,17 +68,15 @@ defmodule Pordle.GameServerTest do
              } = state
     end
 
-    test "when move is a winning move", %{name: name, pid: pid} do
-      assert_initial_state(pid)
-
+    test "when move is a winning move", %{name: name} do
       {:ok, %Game{} = state} = play_move(name, "crate")
 
       assert %Game{
-               moves_made: 1,
                result: :won,
+               moves_made: 1,
                board: [
-                 [{:hit, "c"}, {:hit, "r"}, {:hit, "a"}, {:hit, "t"}, {:hit, "e"}],
-                 _
+                 [hit: "c", hit: "r", hit: "a", hit: "t", hit: "e"],
+                 [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil]
                ],
                keyboard: %{
                  "c" => :hit,
@@ -89,18 +88,16 @@ defmodule Pordle.GameServerTest do
              } = state
     end
 
-    test "when move is a losing move", %{name: name, pid: pid} do
-      assert_initial_state(pid)
-
+    test "when move is a losing move", %{name: name} do
       {:ok, %Game{} = _state} = play_move(name, "slate")
       {:ok, %Game{} = state} = play_move(name, "slate")
 
       assert %Game{
-               moves_made: 2,
                result: :lost,
+               moves_made: 2,
                board: [
-                 [{:miss, "s"}, {:miss, "l"}, {:hit, "a"}, {:hit, "t"}, {:hit, "e"}],
-                 _
+                 [miss: "s", miss: "l", hit: "a", hit: "t", hit: "e"],
+                 [miss: "s", miss: "l", hit: "a", hit: "t", hit: "e"]
                ],
                keyboard: %{
                  "s" => :miss,
@@ -112,31 +109,24 @@ defmodule Pordle.GameServerTest do
              } = state
     end
 
-    test "when move is not in dictionary", %{name: name, pid: pid} do
-      assert_initial_state(pid)
-
+    test "when move is not in dictionary", %{name: name} do
       {:error, :word_not_found} = play_move(name, "there")
     end
 
     test "when move is too short", %{name: name, pid: pid} do
-      assert_initial_state(pid)
-
       {:error, :invalid_move} = play_move(name, "foo")
 
       assert %Game{
                moves_made: 0,
-               keyboard: %{},
                board: [
                  [full: "f", full: "o", full: "o", empty: nil, empty: nil],
-                 _
-               ]
+                 [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil]
+               ],
+               keyboard: %{}
              } = :sys.get_state(pid)
     end
 
     test "when move is too long ignores last char", %{name: name, pid: pid} do
-      assert_initial_state(pid)
-
-      # fooba doesn't exist
       {:error, :word_not_found} = play_move(name, "foobar")
 
       assert %Game{
@@ -144,21 +134,10 @@ defmodule Pordle.GameServerTest do
                keyboard: %{},
                board: [
                  [full: "f", full: "o", full: "o", full: "b", full: "a"],
-                 _
+                 [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil]
                ]
              } = :sys.get_state(pid)
     end
-  end
-
-  defp assert_initial_state(pid) do
-    assert %Game{
-             moves_made: 0,
-             keyboard: %{},
-             board: [
-               [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil],
-               _
-             ]
-           } = :sys.get_state(pid)
   end
 
   describe "insert_char/2" do
@@ -229,8 +208,6 @@ defmodule Pordle.GameServerTest do
       # 
       # Without `Process.sleep` this assertion will fail since `Process.alive?/1` returns
       # before GenServer has shutdown.
-      # 
-      # Find a better way to test this.
       Process.sleep(50)
       refute Process.alive?(pid)
     end
@@ -242,5 +219,16 @@ defmodule Pordle.GameServerTest do
     end
 
     GameServer.play_move(game)
+  end
+
+  defp assert_initial_state(pid) do
+    assert %Game{
+             moves_made: 0,
+             keyboard: %{},
+             board: [
+               [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil],
+               _
+             ]
+           } = :sys.get_state(pid)
   end
 end
