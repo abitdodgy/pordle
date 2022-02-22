@@ -136,7 +136,8 @@ defmodule Pordle.GameServerTest do
     test "when move is too long ignores last char", %{name: name, pid: pid} do
       assert_initial_state(pid)
 
-      {:error, :word_not_found} = play_move(name, "foobar") # fooba doesn't exist
+      # fooba doesn't exist
+      {:error, :word_not_found} = play_move(name, "foobar")
 
       assert %Game{
                moves_made: 0,
@@ -185,7 +186,10 @@ defmodule Pordle.GameServerTest do
       {:ok, name: "game", game: game}
     end
 
-    test "deletes most recently added `char` of type `:full` from `game`", %{name: name, game: state} do
+    test "deletes most recently added `char` of type `:full` from `game`", %{
+      name: name,
+      game: state
+    } do
       assert %Game{
                board: [
                  [full: "s", empty: nil, empty: nil, empty: nil, empty: nil]
