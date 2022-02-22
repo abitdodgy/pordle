@@ -7,13 +7,24 @@ defmodule Pordle.Test.Dictionary do
 
   @dictionary ~w[
     foo
-    foobar
 
+    taste
+    storm
     slate
     heart
     crate
+    tarot
+    tatts
+    stott
+    sttty
+    stttt
+    tstft
+    tsttf
+    ttttf
+    tarty
 
     bubble
+    foobar
     bbblue
   ]
 

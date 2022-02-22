@@ -34,8 +34,8 @@ defmodule Pordle.GameServer do
     opts =
       Keyword.put_new_lazy(opts, :puzzle, fn ->
         opts
-        |> Keyword.get(:puzzle_size, config(:default_puzzle_size))
-        |> config(:dictionary).new()
+        |> Keyword.get(:puzzle_size, Pordle.config(:default_puzzle_size))
+        |> Pordle.config(:dictionary).new()
       end)
 
     {:ok, Game.new(opts)}
@@ -57,40 +57,50 @@ defmodule Pordle.GameServer do
   end
 
   @doc """
-  Sends the player move to the game with the given `name`.
+  Commits the player move to the game with the given `name`.
 
   ## Examples
 
-      iex> play_move(name, move)
+      iex> play_move(name)
       {:ok, %Game{}}
 
   """
-  def play_move(name, move) do
-    word = sanitize(move)
-
-    cond do
-      config(:dictionary).valid?(word) ->
-        name
-        |> via_tuple()
-        |> GenServer.call({:play_move, word})
-
-      true ->
-        {:error, :word_not_found}
-    end
+  def play_move(name) do
+    name
+    |> via_tuple()
+    |> GenServer.call(:play_move)
   end
 
-  def add_char(name, char) do
+  @doc """
+  Adds a char to the board of the given game. See `Pordle.Game.insert_char/2` for details.
+
+  ## Examples
+
+      iex> insert_char(game, "x")
+      iex> %Game{board: [[full: "x"]]}
+
+  """
+  def insert_char(name, char) do
     char = sanitize(char)
 
     name
     |> via_tuple()
-    |> GenServer.call({:add_char, char})
+    |> GenServer.call({:insert_char, char})
   end
 
-  def del_char(name) do
+  @doc """
+  Deletes a char from the board of the given game. See `Pordle.Game.delete_char/1` for details.
+
+  ## Examples
+
+      iex> delete_char(game)
+      iex> %Game{board: [[empty: nil]]}
+
+  """
+  def delete_char(name) do
     name
     |> via_tuple()
-    |> GenServer.call(:del_char)
+    |> GenServer.call(:delete_char)
   end
 
   @doc """
@@ -108,9 +118,13 @@ defmodule Pordle.GameServer do
     |> GenServer.cast(:exit)
   end
 
+  #               #
+  #   Server API  #
+  #               #
+
   @impl true
-  def handle_call({:play_move, move}, _from, state) do
-    case Game.play_move(state, move) do
+  def handle_call(:play_move, _from, state) do
+    case Game.play_move(state) do
       {:ok, new_state} ->
         {:reply, {:ok, new_state}, new_state}
 
@@ -120,8 +134,8 @@ defmodule Pordle.GameServer do
   end
 
   @impl true
-  def handle_call({:add_char, char}, _from, state) do
-    case Game.add_char(state, char) do
+  def handle_call({:insert_char, char}, _from, state) do
+    case Game.insert_char(state, char) do
       {:ok, new_state} ->
         {:reply, {:ok, new_state}, new_state}
 
@@ -131,8 +145,8 @@ defmodule Pordle.GameServer do
   end
 
   @impl true
-  def handle_call(:del_char, _from, state) do
-    case Game.del_char(state) do
+  def handle_call(:delete_char, _from, state) do
+    case Game.delete_char(state) do
       {:ok, new_state} ->
         {:reply, {:ok, new_state}, new_state}
 
@@ -155,9 +169,5 @@ defmodule Pordle.GameServer do
     string
     |> String.downcase()
     |> String.trim()
-  end
-
-  defp config(key) do
-    Application.fetch_env!(:pordle, key)
   end
 end

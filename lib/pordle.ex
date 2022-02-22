@@ -5,9 +5,9 @@ defmodule Pordle do
   """
   alias Pordle.{GameSupervisor, GameServer}
 
-  defdelegate play_move(name, move), to: GameServer
-  defdelegate add_char(name, char), to: GameServer
-  defdelegate del_char(name), to: GameServer
+  defdelegate play_move(name), to: GameServer
+  defdelegate insert_char(name, char), to: GameServer
+  defdelegate delete_char(name), to: GameServer
   defdelegate get_state(name), to: GameServer
   defdelegate exit(name), to: GameServer
 
@@ -53,5 +53,9 @@ defmodule Pordle do
     size
     |> :crypto.strong_rand_bytes()
     |> Base.url_encode64(padding: false)
+  end
+
+  def config(key) do
+    Application.fetch_env!(:pordle, key)
   end
 end
