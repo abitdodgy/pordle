@@ -8,6 +8,8 @@ defmodule Pordle.GameTest do
       game = Game.new(name: "game", puzzle: "crate", moves_allowed: 2)
 
       assert %Game{
+               result: nil,
+               finished?: false,
                name: "game",
                puzzle: "crate",
                moves_made: 0,
@@ -35,6 +37,7 @@ defmodule Pordle.GameTest do
 
       assert %Game{
                result: nil,
+               finished?: false,
                moves_made: 1,
                moves_allowed: 2,
                board: [
@@ -56,6 +59,7 @@ defmodule Pordle.GameTest do
 
       assert %Game{
                result: :won,
+               finished?: true,
                moves_made: 1,
                moves_allowed: 2,
                board: [
@@ -72,6 +76,7 @@ defmodule Pordle.GameTest do
 
       assert %Game{
                result: :lost,
+               finished?: true,
                moves_made: 2,
                moves_allowed: 2,
                board: [
@@ -129,6 +134,7 @@ defmodule Pordle.GameTest do
     defp assert_initial_state(game) do
       assert %Game{
                result: nil,
+               finished?: false,
                moves_made: 0,
                keyboard: %{},
                board: [

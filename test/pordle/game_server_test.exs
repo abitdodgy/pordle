@@ -12,6 +12,8 @@ defmodule Pordle.GameServerTest do
                puzzle: "crate",
                moves_made: 0,
                moves_allowed: 6,
+               result: nil,
+               finished?: false,
                board: [
                  [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil],
                  _,
@@ -32,6 +34,8 @@ defmodule Pordle.GameServerTest do
                puzzle: "crate",
                moves_made: 0,
                moves_allowed: 1,
+               result: nil,
+               finished?: false,
                board: [
                  [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil]
                ],
@@ -73,6 +77,7 @@ defmodule Pordle.GameServerTest do
 
       assert %Game{
                result: :won,
+               finished?: true,
                moves_made: 1,
                board: [
                  [hit: "c", hit: "r", hit: "a", hit: "t", hit: "e"],
@@ -94,6 +99,7 @@ defmodule Pordle.GameServerTest do
 
       assert %Game{
                result: :lost,
+               finished?: true,
                moves_made: 2,
                board: [
                  [miss: "s", miss: "l", hit: "a", hit: "t", hit: "e"],

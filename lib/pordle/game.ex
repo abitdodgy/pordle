@@ -19,6 +19,7 @@ defmodule Pordle.Game do
           moves_allowed: non_neg_integer() | 6,
           moves_made: non_neg_integer() | 0,
           result: atom() | :lost | :won | nil,
+          finished?: Boolean,
           board: list([{atom(), String.t()}]) | [],
           keyboard: Map.t() | %{}
         }
@@ -26,6 +27,7 @@ defmodule Pordle.Game do
   defstruct name: nil,
             puzzle: nil,
             result: nil,
+            finished?: false,
             moves_allowed: 6,
             moves_made: 0,
             board: [],
@@ -56,7 +58,8 @@ defmodule Pordle.Game do
        %Game{
          board: [[hit: "a", hit: "t"]],
          keyboard: %{"a" => :hit, "t" => :hit},
-         moves_made: 1
+         moves_made: 1,
+         result: :won
        }}
 
 
@@ -65,7 +68,8 @@ defmodule Pordle.Game do
        %Game{
          board: [[miss: "u", hit: "t"]],
          keyboard: %{"u" => :miss, "t" => :hit},
-         moves_made: 1
+         moves_made: 1,
+         result: :lost
        }}
 
   """
@@ -180,25 +184,29 @@ defmodule Pordle.Game do
 
     cond do
       word == puzzle ->
-        Map.put(game, :result, :won)
+        game
+        |> Map.put(:result, :won)
+        |> Map.put(:finished?, true)
 
       moves_made == moves_allowed ->
-        Map.put(game, :result, :lost)
+        game
+        |> Map.put(:result, :lost)
+        |> Map.put(:finished?, true)
 
       true ->
         game
     end
   end
 
-  defp put_keyboard(game) do
+  defp put_keyboard(%Game{board: board} = game) do
+    board = List.flatten(board)
+
     keyboard =
-      game
-      |> Map.get(:board)
-      |> List.flatten()
+      board
       |> Enum.reject(fn {_type, char} -> is_nil(char) end)
       |> Enum.reduce(%{}, fn {type, char}, acc ->
-        Map.update(acc, char, type, fn existing_value ->
-          if existing_value == :hit, do: existing_value, else: type
+        Map.update(acc, char, type, fn existing ->
+          if existing == :hit, do: existing, else: type
         end)
       end)
 
@@ -208,7 +216,7 @@ defmodule Pordle.Game do
   defp parse_move(puzzle, answer) do
     puzzle = to_list(puzzle)
 
-    for {{_type, char}, index} <- Enum.with_index(answer), reduce: [] do
+    for {{_, char}, index} <- Enum.with_index(answer), reduce: [] do
       acc ->
         cond do
           char == Enum.at(puzzle, index) ->
