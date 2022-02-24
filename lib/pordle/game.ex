@@ -10,6 +10,8 @@ defmodule Pordle.Game do
 
   @derive Jason.Encoder
 
+  @char_list ~w(a b c d e f g h i j k l m n o p q r s t u v w x y z)
+
   @typedoc """
   A Pordle game type, e.g. `%Game{}`.
   """
@@ -102,14 +104,20 @@ defmodule Pordle.Game do
 
   """
   def insert_char(%Game{board: board, moves_made: moves_made} = game, char) do
-    row =
-      board
-      |> Enum.at(moves_made)
-      |> List.keyreplace(:empty, 0, {:full, sanitize(char)})
+    sanitized_char = sanitize(char)
 
-    Map.get_and_update(game, :board, fn board ->
-      {:ok, List.replace_at(board, moves_made, row)}
-    end)
+    if Enum.member?(@char_list, sanitized_char) do
+      row =
+        board
+        |> Enum.at(moves_made)
+        |> List.keyreplace(:empty, 0, {:full, sanitized_char})
+
+      Map.get_and_update(game, :board, fn board ->
+        {:ok, List.replace_at(board, moves_made, row)}
+      end)
+    else
+      {:ok, game}
+    end
   end
 
   @doc """
@@ -251,8 +259,8 @@ defmodule Pordle.Game do
     |> Enum.join()
   end
 
-  defp sanitize(string) do
-    string
+  defp sanitize(char) do
+    char
     |> String.downcase()
     |> String.trim()
   end

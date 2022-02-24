@@ -165,12 +165,20 @@ defmodule Pordle.GameTest do
       {:ok, game: Game.new(name: "game", puzzle: "foo", moves_allowed: 2)}
     end
 
-    test "sanitises adds char to the current move", %{game: game} do
+    test "sanitises and adds char to the current move", %{game: game} do
       assert %Game{board: [[empty: nil, empty: nil, empty: nil], _]} = game
 
       {:ok, game} = Game.insert_char(game, " F ")
 
       assert %Game{board: [[full: "f", empty: nil, empty: nil], _]} = game
+    end
+
+    test "when char is not in allowed list", %{game: game} do
+      assert %Game{board: [[empty: nil, empty: nil, empty: nil], _]} = game
+
+      {:ok, game} = Game.insert_char(game, "é")
+
+      assert %Game{board: [[empty: nil, empty: nil, empty: nil], _]} = game
     end
 
     test "does not overflow", %{game: game} do
