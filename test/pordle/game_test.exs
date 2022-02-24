@@ -23,98 +23,116 @@ defmodule Pordle.GameTest do
     end
   end
 
-  describe "play_move/2" do
+  describe "play_move/1" do
     setup do
-      game = Game.new(name: "game", puzzle: "crate", moves_allowed: 2)
+      game = Game.new(name: "game", puzzle: "crane", moves_allowed: 2)
 
       assert_initial_state(game)
 
       {:ok, game: game}
     end
 
-    test "with a valid move", %{game: game} do
-      {:ok, %Game{} = game} = play_move(game, "heart")
+    test "applys the current move to the board", %{game: game} do
+      game = prime_move(game, ~w(c r a t e))
 
-      assert %Game{
-               result: nil,
-               finished?: false,
-               moves_made: 1,
-               moves_allowed: 2,
-               board: [
-                 [miss: "h", nearly: "e", hit: "a", nearly: "r", nearly: "t"],
-                 _
-               ],
-               keyboard: %{
-                 "h" => :miss,
-                 "e" => :nearly,
-                 "a" => :hit,
-                 "r" => :nearly,
-                 "t" => :nearly
-               }
-             } = game
+      assert {:ok,
+              %Game{
+                moves_made: 1,
+                result: nil,
+                finished?: false,
+                board: [
+                  [hit: "c", hit: "r", hit: "a", miss: "t", hit: "e"],
+                  _
+                ],
+                keyboard: %{"c" => :hit, "r" => :hit, "a" => :hit, "t" => :miss, "e" => :hit}
+              }} = Game.play_move(game)
     end
 
-    test "with a winning move", %{game: game} do
-      {:ok, %Game{} = game} = play_move(game, "crate")
+    test "when current move is too short", %{game: game} do
+      game = prime_move(game, ~w(c r a t))
+      assert {:error, :invalid_move} = Game.play_move(game)
+    end
 
-      assert %Game{
-               result: :won,
-               finished?: true,
-               moves_made: 1,
-               moves_allowed: 2,
-               board: [
-                 [hit: "c", hit: "r", hit: "a", hit: "t", hit: "e"],
-                 _
-               ],
-               keyboard: %{"c" => :hit, "r" => :hit, "a" => :hit, "t" => :hit, "e" => :hit}
-             } = game
+    test "when move is a winning move", %{game: game} do
+      game = prime_move(game, ~w(c r a n e))
+
+      assert {:ok,
+              %Game{
+                moves_made: 1,
+                result: :won,
+                finished?: true,
+                board: [
+                  [hit: "c", hit: "r", hit: "a", hit: "n", hit: "e"],
+                  _
+                ],
+                keyboard: %{"c" => :hit, "r" => :hit, "a" => :hit, "n" => :hit, "e" => :hit}
+              }} = Game.play_move(game)
+    end
+
+    test "when game is finished", %{game: game} do
+      game = prime_move(game, ~w(c r a n e))
+
+      {:ok, game} = Game.play_move(game)
+
+      assert {:error, :game_over} = Game.play_move(game)
     end
 
     test "when moves run out", %{game: game} do
-      {:ok, %Game{} = game} = play_move(game, "heart")
-      {:ok, %Game{} = game} = play_move(game, "slate")
+      game = prime_move(game, ~w(c r a t e))
 
-      assert %Game{
-               result: :lost,
-               finished?: true,
-               moves_made: 2,
-               moves_allowed: 2,
-               board: [
-                 [miss: "h", nearly: "e", hit: "a", nearly: "r", nearly: "t"],
-                 [miss: "s", miss: "l", hit: "a", hit: "t", hit: "e"]
-               ],
-               keyboard: %{
-                 "h" => :miss,
-                 "e" => :hit,
-                 "a" => :hit,
-                 "r" => :nearly,
-                 "t" => :hit,
-                 "s" => :miss,
-                 "l" => :miss
-               }
-             } = game
+      assert {:ok,
+              %Game{
+                moves_made: 1,
+                result: nil,
+                finished?: false,
+                board: [
+                  [hit: "c", hit: "r", hit: "a", miss: "t", hit: "e"],
+                  [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil]
+                ],
+                keyboard: %{"c" => :hit, "r" => :hit, "a" => :hit, "t" => :miss, "e" => :hit}
+              } = game} = Game.play_move(game)
+
+      game = prime_move(game, ~w(s l a i n))
+
+      assert {:ok,
+              %Game{
+                moves_made: 2,
+                result: :lost,
+                finished?: true,
+                board: [
+                  [hit: "c", hit: "r", hit: "a", miss: "t", hit: "e"],
+                  [miss: "s", miss: "l", hit: "a", miss: "i", nearly: "n"]
+                ],
+                keyboard: %{
+                  "c" => :hit,
+                  "r" => :hit,
+                  "a" => :hit,
+                  "t" => :miss,
+                  "e" => :hit,
+                  "s" => :miss,
+                  "l" => :miss,
+                  "i" => :miss
+                }
+              }} = Game.play_move(game)
     end
 
-    test "when move is too short", %{game: game} do
-      {:error, :invalid_move} = play_move(game, "foo")
-    end
-
-    test "when move is too long ignores last char", %{game: game} do
-      {:error, :word_not_found} = play_move(game, "foobar")
+    test "when word is not in the dictionary", %{game: game} do
+      game = prime_move(game, ~w(c r o f t))
+      assert {:error, :word_not_found} = Game.play_move(game)
     end
 
     test "evaluates double letters correctly" do
       game = Game.new(name: "game", puzzle: "tarty", moves_allowed: 9)
 
-      {:ok, %Game{} = game} = play_move(game, "tarot")
-      {:ok, %Game{} = game} = play_move(game, "tatts")
-      {:ok, %Game{} = game} = play_move(game, "stott")
-      {:ok, %Game{} = game} = play_move(game, "sttty")
-      {:ok, %Game{} = game} = play_move(game, "stttt")
-      {:ok, %Game{} = game} = play_move(game, "tstft")
-      {:ok, %Game{} = game} = play_move(game, "tsttf")
-      {:ok, %Game{} = game} = play_move(game, "ttttf")
-      {:ok, %Game{} = game} = play_move(game, "tarty")
+      {:ok, game} = game |> prime_move(~w(t a r o t)) |> Game.play_move()
+      {:ok, game} = game |> prime_move(~w(t a t t s)) |> Game.play_move()
+      {:ok, game} = game |> prime_move(~w(s t o t t)) |> Game.play_move()
+      {:ok, game} = game |> prime_move(~w(s t t t y)) |> Game.play_move()
+      {:ok, game} = game |> prime_move(~w(s t t t t)) |> Game.play_move()
+      {:ok, game} = game |> prime_move(~w(t s t f t)) |> Game.play_move()
+      {:ok, game} = game |> prime_move(~w(t s t t f)) |> Game.play_move()
+      {:ok, game} = game |> prime_move(~w(t t t t f)) |> Game.play_move()
+      {:ok, game} = game |> prime_move(~w(t a r t y)) |> Game.play_move()
 
       assert %Game{
                board: [
@@ -130,114 +148,78 @@ defmodule Pordle.GameTest do
                ]
              } = game
     end
-
-    defp assert_initial_state(game) do
-      assert %Game{
-               result: nil,
-               finished?: false,
-               moves_made: 0,
-               keyboard: %{},
-               board: [
-                 [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil],
-                 [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil]
-               ]
-             } = game
-    end
   end
 
   describe "insert_char/2" do
     setup do
-      {:ok, game: Game.new(name: "game", puzzle: "crate", moves_allowed: 1)}
+      {:ok, game: Game.new(name: "game", puzzle: "foo", moves_allowed: 2)}
     end
 
-    test "appends `char` to board with type `:full`", %{game: game} do
-      {:ok, %Game{} = game} = Game.insert_char(game, "h")
+    test "sanitises adds char to the current move", %{game: game} do
+      assert %Game{board: [[empty: nil, empty: nil, empty: nil], _]} = game
 
-      assert %Game{
-               board: [
-                 [full: "h", empty: nil, empty: nil, empty: nil, empty: nil]
-               ]
-             } = game
+      {:ok, game} = Game.insert_char(game, " F ")
 
-      {:ok, %Game{} = game} = Game.insert_char(game, "e")
-
-      assert %Game{
-               board: [
-                 [full: "h", full: "e", empty: nil, empty: nil, empty: nil]
-               ]
-             } = game
+      assert %Game{board: [[full: "f", empty: nil, empty: nil], _]} = game
     end
 
     test "does not overflow", %{game: game} do
-      {:ok, game} = Game.insert_char(game, "h")
-      {:ok, game} = Game.insert_char(game, "e")
-      {:ok, game} = Game.insert_char(game, "a")
-      {:ok, game} = Game.insert_char(game, "r")
-      {:ok, game} = Game.insert_char(game, "t")
+      {:ok, game} = Game.insert_char(game, "f")
+      {:ok, game} = Game.insert_char(game, "o")
+      {:ok, game} = Game.insert_char(game, "o")
 
-      {:ok, %Game{} = game} = Game.insert_char(game, "s")
+      assert %Game{board: [[full: "f", full: "o", full: "o"], _]} = game
 
-      assert %Game{
-               board: [
-                 [full: "h", full: "e", full: "a", full: "r", full: "t"]
-               ]
-             } = game
+      {:ok, game} = Game.insert_char(game, "b")
+
+      assert %Game{board: [[full: "f", full: "o", full: "o"], _]} = game
     end
   end
 
   describe "delete_char/1" do
     setup do
-      game = Game.new(name: "game", puzzle: "crate", moves_allowed: 1)
-
-      {:ok, game} = Game.insert_char(game, "h")
-      {:ok, game} = Game.insert_char(game, "e")
-
-      {:ok, game: game}
+      {:ok,
+       game: Game.new(name: "game", puzzle: "foo", board: [[full: "f", full: "o", full: "o"]])}
     end
 
-    test "deletes most recent `char` with type `:full` from board", %{game: game} do
-      assert %Game{
-               board: [
-                 [full: "h", full: "e", empty: nil, empty: nil, empty: nil]
-               ]
-             } = game
+    test "removes char from end of current move", %{game: game} do
+      assert %Game{board: [[full: "f", full: "o", full: "o"]]} = game
 
-      {:ok, %Game{} = game} = Game.delete_char(game)
+      {:ok, game} = Game.delete_char(game)
 
-      assert %Game{
-               board: [
-                 [full: "h", empty: nil, empty: nil, empty: nil, empty: nil]
-               ]
-             } = game
+      assert %Game{board: [[full: "f", full: "o", empty: nil]]} = game
     end
 
     test "does not overflow", %{game: game} do
-      assert %Game{
-               board: [
-                 [full: "h", full: "e", empty: nil, empty: nil, empty: nil]
-               ]
-             } = game
+      {:ok, game} = Game.delete_char(game)
+      {:ok, game} = Game.delete_char(game)
+      {:ok, game} = Game.delete_char(game)
 
-      {:ok, %Game{} = game} = Game.delete_char(game)
-      {:ok, %Game{} = game} = Game.delete_char(game)
-      {:ok, %Game{} = game} = Game.delete_char(game)
+      assert %Game{board: [[empty: nil, empty: nil, empty: nil]]} = game
 
-      assert %Game{
-               board: [
-                 [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil]
-               ]
-             } = game
+      {:ok, game} = Game.delete_char(game)
+      assert %Game{board: [[empty: nil, empty: nil, empty: nil]]} = game
     end
   end
 
-  defp play_move(game, move) do
-    move = String.codepoints(move)
+  defp assert_initial_state(game) do
+    assert %Game{
+             result: nil,
+             finished?: false,
+             moves_made: 0,
+             keyboard: %{},
+             board: [
+               [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil],
+               [empty: nil, empty: nil, empty: nil, empty: nil, empty: nil]
+             ]
+           } = game
+  end
 
+  defp prime_move(game, move) do
     Enum.reduce(move, game, fn char, acc ->
       acc
       |> Game.insert_char(char)
       |> then(fn {_, game} -> game end)
     end)
-    |> Game.play_move()
   end
 end

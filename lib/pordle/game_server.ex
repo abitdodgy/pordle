@@ -81,8 +81,6 @@ defmodule Pordle.GameServer do
 
   """
   def insert_char(name, char) do
-    char = sanitize(char)
-
     name
     |> via_tuple()
     |> GenServer.call({:insert_char, char})
@@ -117,10 +115,6 @@ defmodule Pordle.GameServer do
     |> via_tuple()
     |> GenServer.cast(:exit)
   end
-
-  #               #
-  #   Server API  #
-  #               #
 
   @impl true
   def handle_call(:play_move, _from, state) do
@@ -163,11 +157,5 @@ defmodule Pordle.GameServer do
   @impl true
   def handle_cast(:exit, state) do
     {:stop, :normal, state}
-  end
-
-  defp sanitize(string) do
-    string
-    |> String.downcase()
-    |> String.trim()
   end
 end

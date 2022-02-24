@@ -39,7 +39,7 @@ defmodule Pordle.Game do
   ## Examples
 
       iex> new(name: "foo", puzzle: "crate", moves_allowed: 6)
-      %Game{puzzle: "crate", puzzle_size: 5, ...}
+      %Game{name: "foo", puzzle: "crate", moves_allowed: 6, ...}
 
   """
   def new(opts) do
@@ -49,41 +49,43 @@ defmodule Pordle.Game do
   end
 
   @doc """
-  Commits the current `move` to the game's `board` and updates the `keyboard`, `moves_made` counter, and `result`.
+  Commits the current `move` to the game's `board` and updates the `keyboard`, `moves_made` counter, `result` and `finished?` keys.
 
   ## Examples
 
-      iex> play_move(%Game{board: [full: "a", full: "t"]], moves_made: 0, puzzle: "at"})
+      iex> play_move(%Game{board: [[full: "a", full: "t"]], moves_made: 0, puzzle: "at"})
       {:ok,
        %Game{
          board: [[hit: "a", hit: "t"]],
          keyboard: %{"a" => :hit, "t" => :hit},
          moves_made: 1,
-         result: :won
+         result: :won,
+         finished?: true
        }}
 
 
-      iex> play_move(%Game{board: [full: "u", full: "t"]], moves_made: 0, puzzle: "at"})
+      iex> play_move(%Game{board: [[full: "u", full: "t"]], moves_made: 0, puzzle: "at"})
       {:ok,
        %Game{
          board: [[miss: "u", hit: "t"]],
          keyboard: %{"u" => :miss, "t" => :hit},
          moves_made: 1,
-         result: :lost
+         result: :lost,
+         finished?: true
        }}
 
   """
   def play_move(%Game{board: board, moves_made: moves_made} = game) do
-    move = Enum.at(board, moves_made)
+    current_move = Enum.at(board, moves_made)
 
-    case validate_move(game, move) do
+    case validate_move(game, current_move) do
       :ok ->
         game
+        |> put_board(current_move)
+        |> put_keys()
         |> put_moves()
-        |> put_board(move)
-        |> put_result(move)
-        |> put_keyboard()
-        |> then(&{:ok, &1})
+        |> put_result(current_move)
+        |> then(fn game -> {:ok, game} end)
 
       error ->
         error
@@ -91,19 +93,19 @@ defmodule Pordle.Game do
   end
 
   @doc """
-  Appends the given char to the first `[empty: nil]` cell on the board.
+  Appends the given char to the game `board`.
 
   ## Examples
 
-      iex> insert_char(%Game{board: [[full: "w", full: "o", full: "r", empty: nil]]}, "d")
-      %Game{board: [[full: "w", full: "o", full: "r", full: "d"]]}
+      iex> insert_char(%Game{board: [[]]}, "d")
+      %Game{board: [[full: "d"]]}
 
   """
   def insert_char(%Game{board: board, moves_made: moves_made} = game, char) do
     row =
       board
       |> Enum.at(moves_made)
-      |> List.keyreplace(:empty, 0, {:full, char})
+      |> List.keyreplace(:empty, 0, {:full, sanitize(char)})
 
     Map.get_and_update(game, :board, fn board ->
       {:ok, List.replace_at(board, moves_made, row)}
@@ -111,12 +113,12 @@ defmodule Pordle.Game do
   end
 
   @doc """
-  Deletes the last char appended to the board.
+  Removes the last char from the game `board`.
 
   ## Examples
 
-      iex> delete_char(%Game{board: [[full: "w", full: "o", full: "r", empty: "d"]]})
-      %Game{board: [[full: "w", full: "o", full: "r", empty: nil]]}
+      iex> delete_char(%Game{board: [[full: "f"]]})
+      %Game{board: [[]]}
 
   """
   def delete_char(%Game{board: board, moves_made: moves_made} = game) do
@@ -144,13 +146,12 @@ defmodule Pordle.Game do
 
   defp init_board(game), do: game
 
-  defp validate_move(%Game{puzzle: puzzle} = game, move) do
+  defp validate_move(%Game{finished?: true}, _move), do: {:error, :game_over}
+
+  defp validate_move(%Game{puzzle: puzzle}, move) do
     word = to_word(move)
 
     cond do
-      finished?(game) ->
-        {:error, :game_over}
-
       String.length(word) != String.length(puzzle) ->
         {:error, :invalid_move}
 
@@ -162,18 +163,27 @@ defmodule Pordle.Game do
     end
   end
 
-  defp finished?(%Game{result: result}), do: not is_nil(result)
-
-  defp put_moves(game) do
-    Map.update!(game, :moves_made, &(&1 + 1))
-  end
-
   defp put_board(%Game{puzzle: puzzle, moves_made: moves_made} = game, move) do
     parsed_move = parse_move(puzzle, move)
 
     Map.update!(game, :board, fn board ->
-      List.replace_at(board, moves_made - 1, parsed_move)
+      List.replace_at(board, moves_made, parsed_move)
     end)
+  end
+
+  defp put_keys(%Game{board: board, keyboard: keyboard, moves_made: moves_made} = game) do
+    current_move = Enum.at(board, moves_made)
+
+    keys =
+      Enum.reduce(current_move, keyboard, fn {type, char}, acc ->
+        Map.update(acc, char, type, &(if &1 == :hit, do: &1, else: type))
+      end)
+
+    Map.put(game, :keyboard, keys)
+  end
+
+  defp put_moves(game) do
+    Map.update!(game, :moves_made, &(&1 + 1))
   end
 
   defp put_result(
@@ -184,39 +194,20 @@ defmodule Pordle.Game do
 
     cond do
       word == puzzle ->
-        game
-        |> Map.put(:result, :won)
-        |> Map.put(:finished?, true)
+        %{game | result: :won, finished?: true}
 
       moves_made == moves_allowed ->
-        game
-        |> Map.put(:result, :lost)
-        |> Map.put(:finished?, true)
+        %{game | result: :lost, finished?: true}
 
       true ->
         game
     end
   end
 
-  defp put_keyboard(%Game{board: board} = game) do
-    board = List.flatten(board)
-
-    keyboard =
-      board
-      |> Enum.reject(fn {_type, char} -> is_nil(char) end)
-      |> Enum.reduce(%{}, fn {type, char}, acc ->
-        Map.update(acc, char, type, fn existing ->
-          if existing == :hit, do: existing, else: type
-        end)
-      end)
-
-    Map.put(game, :keyboard, keyboard)
-  end
-
   defp parse_move(puzzle, answer) do
     puzzle = to_list(puzzle)
 
-    for {{_, char}, index} <- Enum.with_index(answer), reduce: [] do
+    for {{_type, char}, index} <- Enum.with_index(answer), reduce: [] do
       acc ->
         cond do
           char == Enum.at(puzzle, index) ->
@@ -244,7 +235,7 @@ defmodule Pordle.Game do
     answer_rest
     |> Enum.with_index()
     |> Enum.count(fn {{_type, current}, i} ->
-      char == current && current == Enum.at(puzzle_rest, i)
+      current == char && current == Enum.at(puzzle_rest, i)
     end)
   end
 
@@ -253,5 +244,16 @@ defmodule Pordle.Game do
   end
 
   defp to_list(string), do: String.codepoints(string)
-  defp to_word(list), do: Keyword.values(list) |> Enum.join()
+
+  defp to_word(list) do
+    list
+    |> Keyword.values()
+    |> Enum.join()
+  end
+
+  defp sanitize(string) do
+    string
+    |> String.downcase()
+    |> String.trim()
+  end
 end

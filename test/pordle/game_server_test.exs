@@ -152,8 +152,8 @@ defmodule Pordle.GameServerTest do
       {:ok, name: "game"}
     end
 
-    test "sanitises and adds `char` with type `:full` to `game`", %{name: name} do
-      {:ok, %Game{} = state} = GameServer.insert_char(name, " S  ")
+    test "adds `char` with type `:full` to `game`", %{name: name} do
+      {:ok, %Game{} = state} = GameServer.insert_char(name, "s ")
 
       assert %Game{
                board: [

@@ -11,6 +11,8 @@ defmodule Pordle.Test.Dictionary do
     taste
     storm
     slate
+    crane
+    slain
     heart
     crate
     tarot
