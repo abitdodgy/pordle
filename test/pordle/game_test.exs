@@ -124,15 +124,25 @@ defmodule Pordle.GameTest do
     test "evaluates double letters correctly" do
       game = Game.new(name: "game", puzzle: "tarty", moves_allowed: 9)
 
-      {:ok, game} = game |> prime_move(~w(t a r o t)) |> Game.play_move()
-      {:ok, game} = game |> prime_move(~w(t a t t s)) |> Game.play_move()
-      {:ok, game} = game |> prime_move(~w(s t o t t)) |> Game.play_move()
-      {:ok, game} = game |> prime_move(~w(s t t t y)) |> Game.play_move()
-      {:ok, game} = game |> prime_move(~w(s t t t t)) |> Game.play_move()
-      {:ok, game} = game |> prime_move(~w(t s t f t)) |> Game.play_move()
-      {:ok, game} = game |> prime_move(~w(t s t t f)) |> Game.play_move()
-      {:ok, game} = game |> prime_move(~w(t t t t f)) |> Game.play_move()
-      {:ok, game} = game |> prime_move(~w(t a r t y)) |> Game.play_move()
+      moves = [
+        ~w(t a r o t),
+        ~w(t a t t s),
+        ~w(s t o t t),
+        ~w(s t t t y),
+        ~w(s t t t t),
+        ~w(t s t f t),
+        ~w(t s t t f),
+        ~w(t t t t f),
+        ~w(t a r t y)
+      ]
+
+      game =
+        Enum.reduce(moves, game, fn move, acc ->
+          acc
+          |> prime_move(move)
+          |> Game.play_move()
+          |> then(fn {_, game} -> game end)
+        end)
 
       assert %Game{
                board: [

@@ -176,7 +176,7 @@ defmodule Pordle.Game do
 
     keys =
       Enum.reduce(current_move, keyboard, fn {type, char}, acc ->
-        Map.update(acc, char, type, &(if &1 == :hit, do: &1, else: type))
+        Map.update(acc, char, type, &if(&1 == :hit, do: &1, else: type))
       end)
 
     Map.put(game, :keyboard, keys)
